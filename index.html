@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>보보 게임 버전 트래커</title>
+<title>게임 버전 트래커</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -476,11 +476,15 @@ function renderVersionCard(gameName, v, showNext, nxt) {
   }
 
   return `<div class="vcard" style="--ga:${c.a};--gb:${c.b};--gm:${c.m};--gp:${c.p};">
-    <div style="display:flex;align-items:center;gap:9px;margin-bottom:4px;">
-      <img src="${c.icon}" class="game-icon-lg" onerror="this.style.display='none'">
-      <div><p class="vc-game">${gameName}</p><p class="vc-ver">${v.v}버전</p></div>
+    <div style="display:flex;gap:14px;align-items:flex-start;">
+      <img src="${c.icon}" style="width:56px;height:56px;border-radius:12px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
+      <div style="flex:1;min-width:0;">
+        <p class="vc-game">${gameName}</p>
+        <p class="vc-ver">${v.v}버전</p>
+        <p class="vc-dates">(${fmt(s)} – ${fmt(e)})</p>
+      </div>
     </div>
-    <p class="vc-dates">(${fmt(s)} – ${fmt(e)})</p>
+    <div style="height:0.5px;background:var(--border);margin:14px 0;"></div>
     ${phSection('전반', info.half === '전반', f1cd, fnA, frA)}
     <div class="card-divider"></div>
     ${phSection('후반', info.half === '후반', f2cd, hnA, hrA)}
