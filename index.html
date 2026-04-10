@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>게임 버전 트래커</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #eeede9;
+    --text: #1a1a1a;
+    --text2: #666660;
+    --text3: #999994;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: var(--bg2);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── 헤더 ── */
+  header {
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .site-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    padding: 16px 20px 16px 0;
+    margin-right: 16px;
+    border-right: 0.5px solid var(--border);
+    white-space: nowrap;
+  }
+  .tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 0;
+  }
+  .tab-btn {
+    padding: 18px 18px;
+    background: none;
+    border: none;
+    border-bottom: 2.5px solid transparent;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: color 0.15s;
+  }
+  .tab-btn.active { font-weight: 500; }
+
+  /* ── 컨텐츠 ── */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 24px;
+  }
+
+  /* ── 로딩 ── */
+  .loading {
+    text-align: center;
+    padding: 80px 0;
+    color: var(--text3);
+    font-size: 14px;
+  }
+  .loading-dot {
+    display: inline-block;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+
+  /* ── 메인 그리드 ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  .section-label {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 16px;
+  }
+
+  /* ── 버전 카드 ── */
+  .vcard {
+    background: var(--bg);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border-left: 4px solid var(--ga);
+  }
+  .vc-game { font-size: 11px; color: var(--text3); margin-bottom: 4px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .vc-ver  { font-size: 22px; font-weight: 600; color: var(--ga); line-height: 1.1; }
+  .vc-dates{ font-size: 13px; color: var(--text2); margin-top: 3px; margin-bottom: 16px; }
+
+  .ph-section { margin-bottom: 14px; }
+  .ph-section:last-of-type { margin-bottom: 0; }
+  .ph-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 7px; }
+  .ph-title { font-size: 14px; font-weight: 600; color: var(--text2); }
+  .ph-title.active { color: var(--ga); }
+  .ph-countdown { font-size: 12px; color: var(--text3); }
+  .ph-countdown.active { color: var(--ga); }
+  .ph-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+
+  .tag-n { font-size: 12px; padding: 3px 10px; border-radius: 5px; background: var(--gb); color: var(--gp); font-weight: 500; }
+  .tag-r { font-size: 12px; padding: 3px 10px; border-radius: 5px; background: var(--bg3); color: var(--text2); }
+  .tag-empty { font-size: 12px; color: var(--text3); font-style: italic; }
+  .tag-memo { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: var(--bg3); color: var(--text2); border: 0.5px solid var(--border); }
+
+  .card-divider { height: 0.5px; background: var(--border); margin: 14px 0; }
+  .next-lbl { font-size: 11px; color: var(--text3); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .next-ver { font-size: 13px; font-weight: 600; color: var(--text); }
+  .next-dates { font-size: 12px; color: var(--text2); margin-left: 5px; }
+
+  /* ── 서브탭 ── */
+  .sub-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    overflow: hidden;
+    width: fit-content;
+    background: var(--bg3);
+  }
+  .sub-btn {
+    padding: 8px 22px;
+    background: none;
+    border: none;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s;
+  }
+  .sub-btn.on { font-weight: 500; border-radius: calc(var(--radius) - 1px); }
+
+  /* ── 복각 계산기 ── */
+  .calc-box {
+    background: var(--bg);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-top: 14px;
+  }
+  .calc-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+  .calc-desc  { font-size: 12px; color: var(--text2); margin-bottom: 14px; }
+  .calc-row   { display: flex; gap: 8px; }
+  .calc-input {
+    flex: 1;
+    padding: 9px 13px;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .calc-input:focus { border-color: var(--ga); }
+  .calc-btn {
+    padding: 9px 20px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .calc-btn:hover { opacity: 0.85; }
+  .result-box { margin-top: 14px; padding: 16px; border-radius: var(--radius); }
+  .r-found { background: var(--gb); border: 0.5px solid var(--gm); }
+  .r-error  { background: #FEF3E0; border: 0.5px solid #FAC775; }
+  .r-none   { background: var(--bg3); border: 0.5px solid var(--border); }
+  .r-char { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+  .r-stats { display: flex; border: 0.5px solid var(--gm); border-radius: var(--radius); overflow: hidden; }
+  .r-stat { flex: 1; padding: 12px 0; text-align: center; background: var(--bg); }
+  .r-stat + .r-stat { border-left: 0.5px solid var(--gm); }
+  .r-num { font-size: 24px; font-weight: 600; }
+  .r-lbl { font-size: 11px; color: var(--text2); margin-top: 3px; }
+  .r-sub { font-size: 12px; color: var(--text2); margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--gm); }
+  .sug-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .sug-btn {
+    font-size: 12px; padding: 4px 12px;
+    border: 0.5px solid var(--border2); border-radius: 20px;
+    background: var(--bg); cursor: pointer; font-family: inherit; color: var(--text);
+  }
+  .sug-btn:hover { background: var(--bg3); }
+
+  /* ── 타임라인 ── */
+  .tl-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .tl-accent-bar { width: 4px; height: 22px; border-radius: 2px; }
+  .tl-game-title { font-size: 16px; font-weight: 600; color: var(--text); }
+  .tl-sort-lbl { font-size: 12px; color: var(--text3); }
+
+  .timeline { position: relative; padding-left: 32px; }
+  .tl-line { position: absolute; left: 8px; top: 0; bottom: 0; width: 1px; background: var(--border2); }
+  .tl-item { position: relative; margin-bottom: 10px; }
+  .tl-dot { position: absolute; border-radius: 50%; transform: translateX(-50%); left: 8px; }
+  .tl-card { border-radius: var(--radius); padding: 13px 15px; }
+  .tl-current { background: var(--gb); border: 0.5px solid var(--gm); }
+  .tl-future  { background: var(--bg); border: 0.5px solid var(--border); }
+  .tl-past    { background: var(--bg); border: 0.5px solid var(--border); opacity: 0.42; }
+  .tl-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+  .tl-ver { font-size: 15px; font-weight: 600; }
+  .tl-dates { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .tl-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+  .tl-ph-title { font-size: 13px; font-weight: 600; margin: 9px 0 5px; }
+  .tl-ph-title.active { color: var(--ga); }
+  .tl-ph-title.dim    { color: var(--text2); }
+
+  /* ── 범례 ── */
+  .legend { display: flex; gap: 8px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+
+  /* ── 에러 ── */
+  .error-box { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 40px; text-align: center; color: var(--text2); font-size: 14px; }
+
+  @media (max-width: 600px) {
+    main { padding: 20px 16px; }
+    header { padding: 0 16px; }
+    .site-title { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <p class="site-title">BBYO</p>
+    <div class="tabs" id="tabs"></div>
+  </div>
+</header>
+
+<main id="main">
+  <div class="loading">
+    <span class="loading-dot" style="animation-delay:0s">●</span>&nbsp;
+    <span class="loading-dot" style="animation-delay:0.2s">●</span>&nbsp;
+    <span class="loading-dot" style="animation-delay:0.4s">●</span>
+    <p style="margin-top:12px;">시트 데이터 불러오는 중...</p>
+  </div>
+</main>
+
+<script>
+// ── 설정 ──────────────────────────────────────────────
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyz6c92R-LC6sF8uNb5HPpHkZsjkHZXJoO6J8kmyjR84hAzrOyiX-bUmuPRJhXVSbUk8-TOm8FFM0p/pub?output=csv';
+
+const GAME_CONFIG = {
+  '원신':     { id:'genshin',   a:'#BA7517', b:'#FEF3E0', m:'#FAC775', p:'#633806' },
+  '명조':     { id:'wuwa',      a:'#0F6E56', b:'#E1F5EE', m:'#9FE1CB', p:'#085041' },
+  '붕스':     { id:'starrail',  a:'#534AB7', b:'#EEEDFE', m:'#CECBF6', p:'#3C3489' },
+  '엔드필드': { id:'endfield',  a:'#185FA5', b:'#E6F1FB', m:'#B5D4F4', p:'#0C447C' },
+};
+const GAME_ORDER = ['원신', '붕스', '명조', '엔드필드'];
+
+// ── 유틸 ──────────────────────────────────────────────
+const TODAY = new Date();
+TODAY.setHours(0,0,0,0);
+
+function pd(s) {
+  if (!s) return null;
+  const clean = s.replace(/\./g, '/').trim();
+  const [y, m, d] = clean.split('/');
+  if (!y || !m || !d) return null;
+  return new Date(+y, +m - 1, +d);
+}
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+function fmt(d) { if (!d) return '?'; return `${d.getMonth()+1}/${String(d.getDate()).padStart(2,'0')}`; }
+function dLeft(d) { return Math.max(0, Math.ceil((d - TODAY) / 86400000)); }
+function sp(s) { return s ? s.split('/').map(n => n.trim()).filter(Boolean) : []; }
+
+function getPhase(v) {
+  const s = pd(v.s), e = pd(v.e);
+  if (!s || !e) return { st: 'unknown' };
+  const mid = addDays(s, 21);
+  if (TODAY < s) return { st: 'future', mid };
+  if (TODAY >= e) return { st: 'past', mid };
+  return { st: 'current', half: TODAY < mid ? '전반' : '후반', mid, end: e };
+}
+
+// ── CSV 파싱 ──────────────────────────────────────────
+function parseCSV(text) {
+  const rows = [];
+  let cur = '', inQ = false, row = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') {
+      if (inQ && text[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      row.push(cur.trim()); cur = '';
+    } else if ((ch === '\n' || ch === '\r') && !inQ) {
+      if (ch === '\r' && text[i+1] === '\n') i++;
+      row.push(cur.trim()); cur = '';
+      if (row.some(c => c)) rows.push(row);
+      row = [];
+    } else {
+      cur += ch;
+    }
+  }
+  if (cur || row.length) { row.push(cur.trim()); if (row.some(c=>c)) rows.push(row); }
+  return rows;
+}
+
+function buildGameData(rows) {
+  const games = {};
+  let curGame = null;
+
+  rows.forEach(row => {
+    const [g, ver, s, e, fn, fr, hn, hr, memo] = row;
+    // 헤더 행 스킵
+    if (ver === '버전' || ver === '시작 날짜') return;
+    // 게임명 행
+    if (g && GAME_CONFIG[g]) { curGame = g; }
+    if (!curGame) return;
+    if (!ver || !s) return;
+
+    if (!games[curGame]) games[curGame] = [];
+    games[curGame].push({
+      v: ver,
+      s: s.replace(/\./g, '/'),
+      e: e ? e.replace(/\./g, '/') : '',
+      fn: fn || '', fr: fr || '',
+      hn: hn || '', hr: hr || '',
+      memo: memo || ''
+    });
+  });
+  return games;
+}
+
+// ── 렌더 헬퍼 ─────────────────────────────────────────
+function nt(arr) { return arr.map(n => `<span class="tag-n">${n}</span>`).join(''); }
+function rt(arr) { return arr.map(n => `<span class="tag-r">${n}</span>`).join(''); }
+
+function phSection(title, isActive, countdown, fnA, frA) {
+  const hasChars = fnA.length || frA.length;
+  return `<div class="ph-section">
+    <div class="ph-head">
+      <span class="ph-title${isActive ? ' active' : ''}">${title}</span>
+      ${countdown ? `<span class="ph-countdown${isActive ? ' active' : ''}">${countdown}</span>` : ''}
+    </div>
+    <div class="ph-tags">${hasChars ? (nt(fnA) + rt(frA)) : '<span class="tag-empty">정보 없음</span>'}</div>
+  </div>`;
+}
+
+function renderVersionCard(gameName, v, showNext, nxt) {
+  const c = GAME_CONFIG[gameName];
+  const info = getPhase(v);
+  const s = pd(v.s), e = pd(v.e), mid = info.mid || (s ? addDays(s, 21) : null);
+  const fnA = sp(v.fn), frA = sp(v.fr), hnA = sp(v.hn), hrA = sp(v.hr);
+  const f1cd = info.st === 'current' && info.half === '전반' ? `종료까지 ${dLeft(mid)}일` : '';
+  const f2cd = info.st === 'current' && info.half === '후반' ? `종료까지 ${dLeft(e)}일` : '';
+
+  let nxtHtml = '';
+  if (showNext && nxt) {
+    const ns = pd(nxt.s), ne = pd(nxt.e);
+    const nfn = sp(nxt.fn), nfr = sp(nxt.fr), nhn = sp(nxt.hn), nhr = sp(nxt.hr);
+    const nhF = nfn.length || nfr.length, nhB = nhn.length || nhr.length;
+    nxtHtml = `<div class="card-divider"></div>
+      <p class="next-lbl">다음 버전</p>
+      <p style="margin-bottom:8px;"><span class="next-ver">${nxt.v}버전</span><span class="next-dates">(${fmt(ns)} – ${fmt(ne)})</span></p>
+      ${nhF ? phSection('전반', false, '', nfn, nfr) : ''}
+      ${nhB ? phSection('후반', false, '', nhn, nhr) : ''}`;
+  }
+
+  return `<div class="vcard" style="--ga:${c.a};--gb:${c.b};--gm:${c.m};--gp:${c.p};">
+    <p class="vc-game">${gameName}</p>
+    <p class="vc-ver">${v.v}버전</p>
+    <p class="vc-dates">(${fmt(s)} – ${fmt(e)})</p>
+    ${phSection('전반', info.half === '전반', f1cd, fnA, frA)}
+    <div class="card-divider"></div>
+    ${phSection('후반', info.half === '후반', f2cd, hnA, hrA)}
+    ${v.memo ? `<div style="margin-top:10px;"><span class="tag-memo">${v.memo}</span></div>` : ''}
+    ${nxtHtml}
+  </div>`;
+}
+
+function tlCard(v, gameName) {
+  const c = GAME_CONFIG[gameName];
+  const info = getPhase(v);
+  const isCur = info.st === 'current', isFut = info.st === 'future', isPast = info.st === 'past';
+  const s = pd(v.s), e = pd(v.e), mid = info.mid || (s ? addDays(s, 21) : null);
+  const fnA = sp(v.fn), frA = sp(v.fr), hnA = sp(v.hn), hrA = sp(v.hr);
+  const hasAny = fnA.length || frA.length || hnA.length || hrA.length;
+  const dotSz = isCur ? 16 : 10;
+  const dotBg = isCur ? c.a : (isFut ? '#fff' : '#ccc');
+  const dotBrd = isCur ? 'none' : `1.5px solid ${isFut ? c.m : '#ccc'}`;
+  const verClr = isCur ? c.a : (isPast ? 'var(--text2)' : 'var(--text)');
+
+  const f1cd = isCur && info.half === '전반' ? `종료까지 ${dLeft(mid)}일` : '';
+  const f2cd = isCur && info.half === '후반' ? `종료까지 ${dLeft(e)}일` : '';
+
+  let ch = '';
+  if (isCur || hasAny) {
+    ch = `<div style="margin-top:8px;">
+      <p class="tl-ph-title${isCur && info.half === '전반' ? ' active' : ' dim'}">전반</p>
+      <div class="ph-tags" style="margin-bottom:2px;">
+        ${fnA.length || frA.length ? (nt(fnA) + rt(frA)) : '<span class="tag-empty">-</span>'}
+        ${f1cd ? `<span style="font-size:12px;color:${c.a};margin-left:4px;">${f1cd}</span>` : ''}
+      </div>
+      <p class="tl-ph-title${isCur && info.half === '후반' ? ' active' : ' dim'}" style="margin-top:8px;">후반</p>
+      <div class="ph-tags">
+        ${hnA.length || hrA.length ? (nt(hnA) + rt(hrA)) : '<span class="tag-empty">-</span>'}
+        ${f2cd ? `<span style="font-size:12px;color:${c.a};margin-left:4px;">${f2cd}</span>` : ''}
+      </div>
+    </div>`;
+  }
+
+  return `<div class="tl-item">
+    <div class="tl-dot" style="width:${dotSz}px;height:${dotSz}px;top:14px;background:${dotBg};border:${dotBrd};"></div>
+    <div class="tl-card ${isCur ? 'tl-current' : isFut ? 'tl-future' : 'tl-past'}" style="--ga:${c.a};--gb:${c.b};--gm:${c.m};--gp:${c.p};">
+      <div class="tl-top">
+        <div>
+          <span class="tl-ver" style="color:${verClr};">${v.v}버전</span>
+          <span class="tl-dates">(${fmt(s)} – ${fmt(e)})</span>
+        </div>
+        ${isCur ? `<span class="tl-badge" style="background:${c.a};color:${c.b};">진행 중</span>` : ''}
+        ${isFut ? `<span class="tl-badge" style="background:var(--bg3);color:var(--text2);">예정</span>` : ''}
+      </div>
+      ${v.memo ? `<div style="margin-bottom:4px;"><span class="tag-memo">${v.memo}</span></div>` : ''}
+      ${ch}
+    </div>
+  </div>`;
+}
+
+// ── 복각 계산기 ───────────────────────────────────────
+function lev(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length:m+1}, (_, i) => Array.from({length:n+1}, (_, j) => i ? j ? 0 : i : j));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+function allChars(gameData) {
+  const map = {};
+  gameData.forEach((v, idx) => {
+    ['fn', 'hn'].forEach(k => {
+      sp(v[k]).forEach(name => {
+        const key = name.replace(/\?/g, '').trim();
+        if (!key) return;
+        if (!map[key]) map[key] = { last: {idx, v: v.v, end: v.e}, rerunCount: 0 };
+        else map[key].last = { idx, v: v.v, end: v.e };
+      });
+    });
+    ['fr', 'hr'].forEach(k => {
+      sp(v[k]).forEach(name => {
+        const key = name.replace(/\?/g, '').trim();
+        if (!key) return;
+        if (!map[key]) map[key] = { last: {idx, v: v.v, end: v.e}, rerunCount: 1 };
+        else { map[key].last = {idx, v: v.v, end: v.e}; map[key].rerunCount++; }
+      });
+    });
+  });
+  return map;
+}
+
+function calcRerun(gameData, q) {
+  q = q.trim();
+  if (!q) return { type: 'empty' };
+  const chars = allChars(gameData), keys = Object.keys(chars);
+  const exact = keys.find(k => k === q);
+  if (exact) {
+    const info = chars[exact];
+    const lastEnd = pd(info.last.end);
+    const daysSince = lastEnd ? Math.max(0, Math.floor((TODAY - lastEnd) / 86400000)) : 0;
+    const pastVers = gameData.slice(info.last.idx + 1).filter(v => { const s = pd(v.s); return s && s <= TODAY; }).length;
+    return { type: 'found', name: exact, lastV: info.last.v, lastEnd: info.last.end, daysSince, pastVers, rerunCount: info.rerunCount };
+  }
+  const partial = keys.filter(k => k.includes(q) || q.includes(k));
+  if (partial.length === 1) return calcRerun(gameData, partial[0]);
+  if (partial.length > 1) return { type: 'suggest', q, suggests: partial };
+  const close = keys.map(k => ({k, d: lev(q, k)})).sort((a,b) => a.d-b.d).filter(x => x.d <= 2).map(x => x.k);
+  if (close.length) return { type: 'typo', q, suggests: close };
+  return { type: 'none', q };
+}
+
+function renderResult(res, gameName) {
+  const c = GAME_CONFIG[gameName];
+  if (res.type === 'empty') return `<div class="result-box r-none"><p style="font-size:13px;color:var(--text2);">캐릭터 이름을 입력해주세요.</p></div>`;
+  if (res.type === 'found') return `<div class="result-box r-found" style="--gb:${c.b};--gm:${c.m};">
+    <p class="r-char" style="color:${c.a};">${res.name}</p>
+    <div class="r-stats">
+      <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.pastVers}</p><p class="r-lbl">버전 경과</p></div>
+      <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.daysSince}</p><p class="r-lbl">일째 미복각</p></div>
+      <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.rerunCount}</p><p class="r-lbl">복각 횟수</p></div>
+    </div>
+    <p class="r-sub">마지막 등장 · ${res.lastV}버전 (${res.lastEnd} 종료)</p>
+  </div>`;
+  if (res.type === 'suggest' || res.type === 'typo') return `<div class="result-box r-error">
+    <p style="font-size:13px;color:#633806;">${res.type === 'typo' ? `"${res.q}"와 비슷한 이름을 찾았어요.` : `"${res.q}"로 여러 캐릭터가 검색됐어요.`}</p>
+    <div class="sug-list">${res.suggests.map(s => `<button class="sug-btn" onclick="fillC('${s}','${gameName}')">${s}</button>`).join('')}</div>
+  </div>`;
+  return `<div class="result-box r-none"><p style="font-size:13px;color:var(--text2);">"${res.q}"를 찾을 수 없어요.</p><p style="font-size:12px;color:var(--text3);margin-top:4px;">시트에 등록된 이름으로 검색해주세요.</p></div>`;
+}
+
+// ── 페이지 렌더 ───────────────────────────────────────
+let GAMES = {};
+let curTab = 'main';
+const subStates = {};
+
+function renderMain() {
+  const today = TODAY;
+  const dateStr = `${today.getMonth()+1}월 ${today.getDate()}일`;
+  const cards = GAME_ORDER
+    .filter(name => GAMES[name])
+    .map(name => {
+      const vs = GAMES[name];
+      let cur = null, ci = -1;
+      vs.forEach((v, i) => { if (getPhase(v).st === 'current') { cur = v; ci = i; } });
+      if (!cur) return '';
+      return renderVersionCard(name, cur, true, vs[ci+1]);
+    }).join('');
+  return `<p class="section-label">오늘(${dateStr}) 기준 진행 중인 버전</p>
+    <div class="main-grid">${cards}</div>
+    <div class="legend">
+      <span style="font-size:11px;color:var(--text3);">색상 구분 —</span>
+      <span class="tag-n" style="--gb:#e8e8e8;--gp:#444;">신규</span>
+      <span class="tag-r">복각</span>
+    </div>`;
+}
+
+function renderCurrentPage(gameName) {
+  const vs = GAMES[gameName];
+  const c = GAME_CONFIG[gameName];
+  let cur = null, ci = -1;
+  vs.forEach((v, i) => { if (getPhase(v).st === 'current') { cur = v; ci = i; } });
+
+  return `<div>
+    ${cur ? renderVersionCard(gameName, cur, true, vs[ci+1]) : `<div class="error-box">현재 진행 중인 버전이 없습니다.</div>`}
+    <div class="calc-box" style="--ga:${c.a};--gb:${c.b};--gm:${c.m};--gp:${c.p};">
+      <p class="calc-title">복각 계산기</p>
+      <p class="calc-desc">캐릭터 이름을 입력하면 마지막 등장 이후 경과 버전 · 일수 · 복각 횟수를 알려드려요.</p>
+      <div class="calc-row">
+        <input class="calc-input" id="ci-${gameName}" placeholder="캐릭터 이름..." onkeydown="if(event.key==='Enter')rc('${gameName}')">
+        <button class="calc-btn" onclick="rc('${gameName}')" style="background:${c.a};color:${c.b};">확인</button>
+      </div>
+      <div id="cr-${gameName}"></div>
+    </div>
+  </div>`;
+}
+
+function renderTimelinePage(gameName) {
+  const c = GAME_CONFIG[gameName];
+  const vs = [...GAMES[gameName]].reverse();
+  return `<div>
+    <div class="tl-header">
+      <div class="tl-accent-bar" style="background:${c.a};"></div>
+      <span class="tl-game-title">${gameName} 전체 일정</span>
+      <span class="tl-sort-lbl">최신순</span>
+    </div>
+    <div class="timeline">
+      <div class="tl-line"></div>
+      ${vs.map(v => tlCard(v, gameName)).join('')}
+    </div>
+  </div>`;
+}
+
+function renderGamePage(gameName) {
+  const c = GAME_CONFIG[gameName];
+  if (!subStates[gameName]) subStates[gameName] = 'current';
+  const sub = subStates[gameName];
+  return `<div>
+    <div class="sub-tabs" style="background:var(--bg3);">
+      <button class="sub-btn${sub === 'current' ? ' on' : ''}" onclick="setSub('${gameName}','current')"
+        style="${sub === 'current' ? `background:${c.a};color:${c.b};` : ''}">현재 버전</button>
+      <button class="sub-btn${sub === 'timeline' ? ' on' : ''}" onclick="setSub('${gameName}','timeline')"
+        style="${sub === 'timeline' ? `background:${c.a};color:${c.b};` : ''}">전체 일정</button>
+    </div>
+    ${sub === 'current' ? renderCurrentPage(gameName) : renderTimelinePage(gameName)}
+  </div>`;
+}
+
+function render() {
+  const mainEl = document.getElementById('main');
+  const tabsEl = document.getElementById('tabs');
+
+  const tabDefs = [['main', '메인'], ...GAME_ORDER.filter(n => GAMES[n]).map(n => [n, n])];
+  tabsEl.innerHTML = tabDefs.map(([id, lbl]) => {
+    const c = GAME_CONFIG[id];
+    const isActive = curTab === id;
+    const ac = c ? c.a : 'var(--text)';
+    return `<button class="tab-btn${isActive ? ' active' : ''}" onclick="sw('${id}')"
+      style="color:${isActive ? ac : 'var(--text2)'};border-bottom-color:${isActive ? ac : 'transparent'};">${lbl}</button>`;
+  }).join('');
+
+  if (curTab === 'main') {
+    mainEl.innerHTML = renderMain();
+  } else if (GAMES[curTab]) {
+    mainEl.innerHTML = renderGamePage(curTab);
+  }
+}
+
+// ── 이벤트 ────────────────────────────────────────────
+window.sw = id => { curTab = id; render(); window.scrollTo(0, 0); };
+window.setSub = (gameName, sub) => { subStates[gameName] = sub; render(); };
+window.rc = gameName => {
+  const el = document.getElementById('ci-' + gameName);
+  if (!el) return;
+  const res = calcRerun(GAMES[gameName], el.value);
+  document.getElementById('cr-' + gameName).innerHTML = renderResult(res, gameName);
+};
+window.fillC = (name, gameName) => {
+  const el = document.getElementById('ci-' + gameName);
+  if (el) { el.value = name; window.rc(gameName); }
+};
+
+// ── 데이터 fetch ──────────────────────────────────────
+async function fetchData() {
+  try {
+    const res = await fetch(CSV_URL);
+    if (!res.ok) throw new Error('fetch failed');
+    const text = await res.text();
+    const rows = parseCSV(text);
+    GAMES = buildGameData(rows);
+    render();
+  } catch (e) {
+    document.getElementById('main').innerHTML = `
+      <div class="error-box">
+        <p style="font-size:15px;font-weight:600;margin-bottom:8px;">데이터를 불러오지 못했어요</p>
+        <p style="font-size:13px;">구글 시트 공개 설정을 확인하거나 잠시 후 다시 시도해주세요.</p>
+        <p style="font-size:12px;color:var(--text3);margin-top:8px;">${e.message}</p>
+      </div>`;
+  }
+}
+
+fetchData();
+</script>
+</body>
+</html>
