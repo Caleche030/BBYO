@@ -99,8 +99,9 @@
     gap: 14px;
   }
   .section-label {
-    font-size: 13px;
-    color: var(--text2);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
     margin-bottom: 16px;
   }
 
@@ -248,8 +249,8 @@
   }
 
   /* ── 가챠 계산기 ── */
-  .gc-game-btn { display:flex; align-items:center; gap:6px; padding:6px 12px; border:1.5px solid var(--border2); border-radius:var(--radius); background:var(--bg2); cursor:pointer; font-family:inherit; font-size:13px; color:var(--text2); transition:all 0.15s; }
-  .gc-game-btn img { width:20px; height:20px; border-radius:4px; display:block; }
+  .gc-game-btn { display:flex; align-items:center; gap:8px; padding:7px 14px; border:1.5px solid var(--border2); border-radius:var(--radius); background:var(--bg2); cursor:pointer; font-family:inherit; font-size:14px; color:var(--text2); transition:all 0.15s; }
+  .gc-game-btn img { width:28px; height:28px; border-radius:6px; display:block; }
   .gc-seg { display:flex; border:0.5px solid var(--border2); border-radius:var(--radius); overflow:hidden; background:var(--bg3); width:fit-content; }
   .gc-seg button { padding:7px 13px; background:none; border:none; font-size:13px; color:var(--text2); cursor:pointer; font-family:inherit; white-space:nowrap; }
   .gc-seg button.on { background:var(--gc-a,#BA7517); color:var(--gc-b,#FEF3E0); font-weight:500; }
@@ -981,29 +982,24 @@ window.gcDoCalc = function() {
 
   document.getElementById('gc-res').innerHTML = `
   <div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden;">
-    <div style="display:flex;align-items:stretch;min-height:100px;">
-      <div style="width:100px;flex-shrink:0;background:${sb};overflow:hidden;display:flex;align-items:flex-end;">
-        <img src="${img}" style="width:100px;height:100px;object-fit:cover;object-position:top;"
-          onerror="this.parentElement.style.background='${sb}'">
-      </div>
-      <div style="display:flex;align-items:center;padding:12px 16px 12px 18px;position:relative;background:${sb};flex:1;">
-        <div style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:10px solid var(--bg);"></div>
-        <div style="background:var(--bg);border-radius:10px;padding:10px 14px;">
-          <p style="font-size:20px;font-weight:600;color:${sc};margin-bottom:3px;">${k}</p>
-          <p style="font-size:13px;color:var(--text2);">${msg}</p>
-        </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:18px 20px;">
+      <img src="${img}" style="width:90px;height:90px;border-radius:10px;object-fit:cover;object-position:top;flex-shrink:0;"
+        onerror="this.style.display='none'">
+      <div>
+        <p style="font-size:22px;font-weight:600;color:${sc};margin-bottom:4px;">${k}</p>
+        <p style="font-size:13px;color:var(--text2);">${msg}</p>
       </div>
     </div>
     <div style="height:0.5px;background:var(--border);"></div>
     <div style="padding:13px 15px;">
-      <p style="font-size:11px;color:var(--text2);margin-bottom:8px;">시나리오별 필요 뽑기</p>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:8px;">시나리오별 필요 뽑기</p>
       <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;">
         ${sbox('최선',best,false)}${sbox('평균',avg,false)}${sbox('최악',worst,false)}${sbox('현재 보유',avail,true)}${nextBox}
       </div>
     </div>
     <div style="height:0.5px;background:var(--border);"></div>
     <div style="padding:12px 15px;">
-      <p style="font-size:11px;color:var(--text2);margin-bottom:10px;">보유 뽑기 위치</p>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">보유 뽑기 위치</p>
       ${gcZoneBar(best,avg,worst,avail)}
     </div>
     <div style="height:0.5px;background:var(--border);"></div>
@@ -1013,11 +1009,11 @@ window.gcDoCalc = function() {
     <div style="height:0.5px;background:var(--border);"></div>
     <div style="padding:10px 15px;background:var(--bg2);display:flex;gap:20px;flex-wrap:wrap;">
       <div>
-        <p style="font-size:11px;color:var(--text2);">10뽑 하면 ★5 나올 확률</p>
+        <p style="font-size:12px;color:var(--text2);">10뽑 하면 ★5 나올 확률</p>
         <p style="font-size:15px;font-weight:500;color:${sc};">${p10s}% <span style="font-size:12px;font-weight:400;">· 픽업이면 ${p10p}%</span></p>
       </div>
       <div>
-        <p style="font-size:11px;color:var(--text2);">보유 뽑기 전부 쓰면 ★5 확률</p>
+        <p style="font-size:12px;color:var(--text2);">보유 뽑기 전부 쓰면 ★5 확률</p>
         <p style="font-size:15px;font-weight:500;color:${sc};">${pAs}% <span style="font-size:12px;font-weight:400;">· 픽업이면 ${pAp}%</span></p>
       </div>
     </div>
