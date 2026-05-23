@@ -200,6 +200,10 @@
   .r-error  { background: #FEF3E0; border: 0.5px solid #FAC775; }
   .r-none   { background: var(--bg3); border: 0.5px solid var(--border); }
   .r-char { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+  .r-archon-tag { font-size: 11px; font-weight: 600; vertical-align: middle; margin-left: 6px; opacity: 0.7; }
+  .r-retire-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .r-retire-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+  .r-retire-note { font-size: 12px; color: var(--text2); }
   .r-stats { display: flex; border: 0.5px solid var(--gm); border-radius: var(--radius); overflow: hidden; }
   .r-stat { flex: 1; padding: 12px 0; text-align: center; background: var(--bg); }
   .r-stat + .r-stat { border-left: 0.5px solid var(--gm); }
@@ -314,6 +318,17 @@ const GAME_CONFIG = {
   '엔드필드': { id:'endfield',  a:'#C86820', b:'#FFF3E8', m:'#D87830', p:'#5A5A64', icon:'icon-endfield.png' },
 };
 const GAME_ORDER = ['원신', '붕스', '명조', '엔드필드'];
+
+// 복각 계산 특수 처리 캐릭터
+const SPECIAL_CHARS = {
+  '원신': {
+    archons:  ['벤티', '종려', '라이덴 쇼군', '나히다', '푸리나', '마비카'],
+    standard: ['타이나리', '유메미즈키 미즈키', '데히야'],
+  },
+  '붕스': {
+    pickable: ['은랑', '제레', '블레이드', '아젠티', '운리', '부현'],
+  },
+};
 
 const REGION_MAP = {
   genshin:  { '1':'몬드 & 리월', '2':'이나즈마', '3':'수메르', '4':'폰타인', '5':'나타', '6':'노드크라이', '7':'스네즈나야' },
@@ -525,17 +540,20 @@ function allChars(gameData) {
 
 function getExpectedRerun(gameData, charKey, lastIdx, gameName) {
   const minGap = (gameName === '원신' || gameName === '붕스') ? 2 : 1;
+  // 확정: 미래 버전의 복각 슬롯에 해당 캐릭터가 명시된 경우
   for (let i = lastIdx + 1; i < gameData.length; i++) {
     const v = gameData[i];
     if (getPhase(v).st !== 'future') continue;
     if ([...sp(v.fr), ...sp(v.hr)].some(n => n === charKey))
       return { type: 'confirmed', ver: v.v, date: pd(v.s) };
   }
+  // 추정: minGap 이후, 복각 슬롯이 비어있는(라인업 미확정) 최초 미래 버전
   const minIdx = Math.max(lastIdx + minGap, lastIdx + 1);
   for (let i = minIdx; i < gameData.length; i++) {
     const v = gameData[i];
-    if (getPhase(v).st === 'future')
-      return { type: 'estimated', ver: v.v, date: pd(v.s) };
+    if (getPhase(v).st !== 'future') continue;
+    if (sp(v.fr).length > 0 || sp(v.hr).length > 0) continue; // 복각 라인업 확정된 버전 건너뜀
+    return { type: 'estimated', ver: v.v, date: pd(v.s) };
   }
   return null;
 }
@@ -547,12 +565,20 @@ function calcRerun(gameData, q, gameName) {
   const exact = keys.find(k => k === q);
   if (exact) {
     const info = chars[exact];
+    const specGame = SPECIAL_CHARS[gameName];
+    // 상시 편입 캐릭터
+    if (specGame?.standard?.includes(exact))
+      return { type: 'retired', name: exact, reason: 'standard', lastV: info.last.v, lastE: info.last.e };
+    // 픽뚫(선택) 배너 이동 캐릭터
+    if (specGame?.pickable?.includes(exact))
+      return { type: 'retired', name: exact, reason: 'pickable', lastV: info.last.v, lastE: info.last.e };
+    const isArchon = specGame?.archons?.includes(exact) ?? false;
     const lastS = pd(info.last.s), lastE = pd(info.last.e);
     const lastBannerEnd = (info.last.half === '전반' && lastS) ? addDays(lastS, 21) : lastE;
     const daysSince = lastBannerEnd ? Math.max(0, Math.floor((TODAY - lastBannerEnd) / 86400000)) : 0;
     const pastVers = gameData.slice(info.last.idx + 1).filter(v => { const s = pd(v.s); return s && s <= TODAY; }).length;
-    const expectedRerun = getExpectedRerun(gameData, exact, info.last.idx, gameName);
-    return { type: 'found', name: exact, lastV: info.last.v, lastE: info.last.e, daysSince, pastVers, rerunCount: info.rerunCount, expectedRerun };
+    const expectedRerun = isArchon ? null : getExpectedRerun(gameData, exact, info.last.idx, gameName);
+    return { type: 'found', name: exact, lastV: info.last.v, lastE: info.last.e, daysSince, pastVers, rerunCount: info.rerunCount, expectedRerun, isArchon };
   }
   const partial = keys.filter(k => k.includes(q) || q.includes(k));
   if (partial.length === 1) return calcRerun(gameData, partial[0], gameName);
@@ -565,20 +591,35 @@ function calcRerun(gameData, q, gameName) {
 function renderResult(res, gameName) {
   const c = GAME_CONFIG[gameName];
   if (res.type === 'empty') return `<div class="result-box r-none"><p style="font-size:13px;color:var(--text2);">캐릭터 이름을 입력해주세요.</p></div>`;
+  if (res.type === 'retired') {
+    const badgeText = res.reason === 'standard' ? '상시 편입' : '선택 배너 이동';
+    const noteText  = res.reason === 'standard'
+      ? '상시 배너로 편입되어 개별 복각 배너가 진행되지 않습니다.'
+      : '픽뚫(선택) 배너로 이동되어 개별 복각 배너가 진행되지 않습니다.';
+    return `<div class="result-box r-found" style="--gb:${c.b};--gm:${c.m};">
+    <p class="r-char" style="color:${c.a};">${res.name}</p>
+    <div class="r-retire-row">
+      <span class="r-retire-badge" style="background:${c.m};color:${c.p};">${badgeText}</span>
+      <span class="r-retire-note">${noteText}</span>
+    </div>
+    <p class="r-sub">마지막 등장 · ${res.lastV}버전 (${res.lastE} 종료)</p>
+  </div>`;
+  }
   if (res.type === 'found') {
     const exp = res.expectedRerun;
     let expBox;
-    if (exp && exp.type === 'confirmed' && exp.date) {
+    if (res.isArchon) {
+      expBox = `<div class="r-stat"><p class="r-num" style="color:${c.a};">집정관</p><p class="r-lbl">순환 복각 대상</p></div>`;
+    } else if (exp && exp.type === 'confirmed' && exp.date) {
       const dl = Math.max(0, Math.ceil((exp.date - TODAY) / 86400000));
-      expBox = `<div class="r-stat"><p class="r-num" style="color:${c.a};">${dl === 0 ? '오늘' : 'D-' + dl}</p><p class="r-lbl">${exp.ver}버전 확정</p></div>`;
-    } else if (exp && exp.type === 'estimated' && exp.date) {
-      const dl = Math.max(0, Math.ceil((exp.date - TODAY) / 86400000));
-      expBox = `<div class="r-stat"><p class="r-num" style="color:${c.a};">D-${dl}~</p><p class="r-lbl">${exp.ver}~ 가능</p></div>`;
+      expBox = `<div class="r-stat"><p class="r-num" style="color:${c.a};">${dl === 0 ? '오늘' : 'D-' + dl}</p><p class="r-lbl">${exp.ver}버전 복각 확정</p></div>`;
+    } else if (exp && exp.type === 'estimated') {
+      expBox = `<div class="r-stat"><p class="r-num" style="color:${c.a};">${exp.ver}버전~</p><p class="r-lbl">이후 복각 가능</p></div>`;
     } else {
       expBox = `<div class="r-stat"><p class="r-num" style="color:var(--text3);">미정</p><p class="r-lbl">예상 복각</p></div>`;
     }
     return `<div class="result-box r-found" style="--gb:${c.b};--gm:${c.m};">
-    <p class="r-char" style="color:${c.a};">${res.name}</p>
+    <p class="r-char" style="color:${c.a};">${res.name}${res.isArchon ? ` <span class="r-archon-tag" style="color:${c.a};">집정관</span>` : ''}</p>
     <div class="r-stats">
       <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.pastVers}</p><p class="r-lbl">버전 경과</p></div>
       <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.daysSince}</p><p class="r-lbl">일째 미복각</p></div>
