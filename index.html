@@ -211,42 +211,6 @@
   }
   .sug-btn:hover { background: var(--bg3); }
 
-  /* ── 아이콘 ── */
-  .game-icon { width: 22px; height: 22px; border-radius: 5px; object-fit: cover; flex-shrink: 0; }
-  .game-icon-lg { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
-  .tab-icon { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; vertical-align: middle; margin-right: 5px; }
-
-  /* ── 갠트 타임라인 ── */
-  .gantt-wrap {
-    background: var(--bg);
-    border: 0.5px solid var(--border2);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    margin-bottom: 24px;
-    overflow: hidden;
-  }
-  .gantt-title { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 16px; letter-spacing: 0.04em; }
-  .gantt-scroll { overflow-x: auto; }
-  .gantt-inner { min-width: 600px; position: relative; }
-  .gantt-header { display: flex; margin-bottom: 6px; padding-left: 36px; }
-  .gantt-month { font-size: 11px; color: var(--text3); font-weight: 600; position: absolute; }
-  .gantt-today-label { font-size: 10px; font-weight: 600; color: #e55; position: absolute; transform: translateX(-50%); top: 0; white-space: nowrap; }
-  .gantt-rows { position: relative; }
-  .gantt-row { display: flex; align-items: center; height: 36px; margin-bottom: 6px; position: relative; }
-  .gantt-icon-cell { width: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-  .gantt-track { flex: 1; height: 28px; position: relative; background: var(--bg3); border-radius: 6px; overflow: visible; }
-  .gantt-bar {
-    position: absolute; height: 100%; border-radius: 6px;
-    display: flex; align-items: center; overflow: hidden;
-    cursor: default; transition: opacity 0.15s;
-  }
-  .gantt-bar:hover { opacity: 0.85; }
-  .gantt-bar-label { font-size: 11px; font-weight: 600; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .gantt-phase-line { position: absolute; top: 0; bottom: 0; width: 1.5px; background: rgba(255,255,255,0.5); pointer-events: none; }
-  .gantt-today-line { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #e55; border-radius: 1px; pointer-events: none; z-index: 10; }
-  .gantt-date-ticks { padding-left: 36px; position: relative; height: 18px; margin-top: 4px; }
-  .gantt-tick { position: absolute; font-size: 10px; color: var(--text3); transform: translateX(-50%); }
-
   /* ── 타임라인 ── */
   .tl-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
   .tl-accent-bar { width: 4px; height: 22px; border-radius: 2px; }
@@ -272,33 +236,6 @@
   /* ── 범례 ── */
   .legend { display: flex; gap: 8px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
 
-  /* ── 커스텀 툴팁 ── */
-  .g-tooltip {
-    position: fixed;
-    z-index: 9999;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.15s;
-    min-width: 160px;
-    max-width: 240px;
-  }
-  .g-tooltip.show { opacity: 1; }
-  .g-tooltip-inner {
-    background: var(--bg);
-    border: 0.5px solid var(--border2);
-    border-radius: var(--radius);
-    padding: 10px 13px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    border-top: 3px solid var(--tt-color, #888);
-  }
-  .g-tooltip-ver { font-size: 13px; font-weight: 600; color: var(--tt-color, #888); margin-bottom:6px; }
-  .g-tooltip-phase { font-size: 11px; font-weight: 600; color: var(--text2); margin: 5px 0 3px; }
-  .g-tooltip-phase.cur { color: var(--tt-color, #888); }
-  .g-tooltip-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-  .g-tooltip-tag-n { font-size: 11px; padding: 2px 7px; border-radius: 4px; }
-  .g-tooltip-tag-r { font-size: 11px; padding: 2px 7px; border-radius: 4px; background: var(--bg3); color: var(--text2); }
-  .g-tooltip-date { font-size: 11px; color: var(--text3); margin-top: 6px; }
-
   /* ── 에러 ── */
   .error-box { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 40px; text-align: center; color: var(--text2); font-size: 14px; }
 
@@ -307,12 +244,44 @@
     header { padding: 0 16px; }
     .site-title { display: none; }
   }
+
+  /* ── 가챠 계산기 ── */
+  .gc-game-btn { display:flex; align-items:center; gap:6px; padding:6px 12px; border:1.5px solid var(--border2); border-radius:var(--radius); background:var(--bg2); cursor:pointer; font-family:inherit; font-size:13px; color:var(--text2); transition:all 0.15s; }
+  .gc-game-btn img { width:20px; height:20px; border-radius:4px; display:block; }
+  .gc-seg { display:flex; border:0.5px solid var(--border2); border-radius:var(--radius); overflow:hidden; background:var(--bg3); width:fit-content; }
+  .gc-seg button { padding:7px 13px; background:none; border:none; font-size:13px; color:var(--text2); cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .gc-seg button.on { background:var(--gc-a,#BA7517); color:var(--gc-b,#FEF3E0); font-weight:500; }
+  .gc-inp { padding:8px 10px; border:0.5px solid var(--border2); border-radius:var(--radius); font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); outline:none; }
+  .gc-inp:focus { border-color:var(--gc-a,#BA7517); }
+  .gc-go { width:100%; padding:11px; border:none; border-radius:var(--radius); font-size:14px; font-weight:500; cursor:pointer; font-family:inherit; transition:opacity 0.15s; }
+  .gc-go:hover { opacity:0.85; }
+  .gc-stat { background:var(--bg2); border-radius:var(--radius); padding:10px 4px; text-align:center; }
+
+  /* ── 비교 탭 스크러버 ── */
+  .sc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .sc-title  { font-size: 15px; font-weight: 600; }
+  .sc-btn    { padding: 6px 14px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); font-size: 12px; font-family: inherit; cursor: pointer; color: var(--text2); transition: background 0.12s; }
+  .sc-btn:hover { background: var(--bg3); }
+  .sc-btn.today { border-color: #e53e3e; color: #e53e3e; }
+  .sc-date-lbl { font-size: 14px; font-weight: 700; color: #e53e3e; margin-left: auto; }
+  .sc-outer  { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); overflow: hidden; }
+  .sc-layout { display: flex; }
+  .sc-label-col  { width: 58px; flex-shrink: 0; border-right: 0.5px solid var(--border); }
+  .sc-label-cell { height: 44px; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; font-size: 11px; font-weight: 600; border-bottom: 0.5px solid var(--border); }
+  .sc-label-ruler { height: 60px; }
+  .sc-viewport { flex: 1; position: relative; overflow: hidden; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .sc-viewport.grabbing { cursor: grabbing; }
+  .sc-track   { position: absolute; top: 0; left: 0; will-change: transform; }
+  .sc-bar-row { position: relative; height: 44px; border-bottom: 0.5px solid var(--border); }
+  .sc-bar     { position: absolute; top: 7px; bottom: 7px; border-radius: 4px; display: flex; align-items: center; padding: 0 7px; font-size: 10px; white-space: nowrap; overflow: hidden; transition: box-shadow 0.1s; }
+  .sc-ruler   { position: relative; height: 60px; border-top: 0.5px solid var(--border2); }
+  .sc-redline { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #e53e3e; pointer-events: none; z-index: 10; transform: translateX(-50%); }
 </style>
 </head>
 <body>
 
-<div id="g-tooltip" class="g-tooltip"><div class="g-tooltip-inner" id="g-tooltip-inner"></div></div>
-<header>  <div class="header-inner">
+<header>
+  <div class="header-inner">
     <p class="site-title">BBYO</p>
     <div class="tabs" id="tabs"></div>
   </div>
@@ -329,13 +298,13 @@
 
 <script>
 // ── 설정 ──────────────────────────────────────────────
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyz6c92R-LC6sF8uNb5HPpHkZsjkHZXJoO6J8kmyjR84hAzrOyiX-bUmuPRJhXVSbUk8-TOm8FFM0p/pub?gid=0&single=true&output=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyz6c92R-LC6sF8uNb5HPpHkZsjkHZXJoO6J8kmyjR84hAzrOyiX-bUmuPRJhXVSbUk8-TOm8FFM0p/pub?output=csv';
 
 const GAME_CONFIG = {
-  '원신':     { id:'genshin',   a:'#BA7517', b:'#FEF3E0', m:'#FAC775', p:'#633806', icon:'icon-genshin.png' },
-  '명조':     { id:'wuwa',      a:'#0F6E56', b:'#E1F5EE', m:'#9FE1CB', p:'#085041', icon:'icon-wuwa.png' },
-  '붕스':     { id:'starrail',  a:'#534AB7', b:'#EEEDFE', m:'#CECBF6', p:'#3C3489', icon:'icon-starrail.png' },
-  '엔드필드': { id:'endfield',  a:'#185FA5', b:'#E6F1FB', m:'#B5D4F4', p:'#0C447C', icon:'icon-endfield.png' },
+  '원신':     { id:'genshin',   a:'#BA7517', b:'#FEF3E0', m:'#FAC775', p:'#633806' },
+  '명조':     { id:'wuwa',      a:'#0F6E56', b:'#E1F5EE', m:'#9FE1CB', p:'#085041' },
+  '붕스':     { id:'starrail',  a:'#534AB7', b:'#EEEDFE', m:'#CECBF6', p:'#3C3489' },
+  '엔드필드': { id:'endfield',  a:'#185FA5', b:'#E6F1FB', m:'#B5D4F4', p:'#0C447C' },
 };
 const GAME_ORDER = ['원신', '붕스', '명조', '엔드필드'];
 
@@ -345,16 +314,10 @@ TODAY.setHours(0,0,0,0);
 
 function pd(s) {
   if (!s) return null;
-  s = s.trim();
-  if (!s) return null;
-  if (/^\d{8}$/.test(s)) return new Date(+s.slice(0,4), +s.slice(4,6)-1, +s.slice(6,8));
-  const clean = s.replace(/[.\-]/g, '/').replace(/\s+/g, '').replace(/\/$/, '');
-  const parts = clean.split('/').map(p => parseInt(p, 10));
-  if (parts.length === 3 && parts.every(p => !isNaN(p))) {
-    if (parts[0] > 1900) return new Date(parts[0], parts[1]-1, parts[2]);
-    if (parts[2] > 1900) return new Date(parts[2], parts[0]-1, parts[1]);
-  }
-  return null;
+  const clean = s.replace(/\./g, '/').trim();
+  const [y, m, d] = clean.split('/');
+  if (!y || !m || !d) return null;
+  return new Date(+y, +m - 1, +d);
 }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
 function fmt(d) { if (!d) return '?'; return `${d.getMonth()+1}/${String(d.getDate()).padStart(2,'0')}`; }
@@ -372,8 +335,6 @@ function getPhase(v) {
 
 // ── CSV 파싱 ──────────────────────────────────────────
 function parseCSV(text) {
-  // BOM 제거
-  text = text.replace(/^\uFEFF/, '');
   const rows = [];
   let cur = '', inQ = false, row = [];
   for (let i = 0; i < text.length; i++) {
@@ -399,43 +360,25 @@ function parseCSV(text) {
 function buildGameData(rows) {
   const games = {};
   let curGame = null;
-  // 헤더 행 컬럼 인덱스 동적 감지
-  let colIdx = { g:0, ver:1, s:2, e:3, fn:4, fr:5, hn:6, hr:7, memo:8 };
 
   rows.forEach(row => {
-    // 헤더 행 감지 (버전 or 구분 포함)
-    if (row[1] === '버전' || row[0] === '구분') {
-      // 컬럼 위치 재감지
-      row.forEach((cell, i) => {
-        if (cell === '구분') colIdx.g = i;
-        if (cell === '버전') colIdx.ver = i;
-        if (cell === '시작 날짜') colIdx.s = i;
-        if (cell === '종료 날짜') colIdx.e = i;
-        if (cell === '전반_신규') colIdx.fn = i;
-        if (cell === '전반_복각') colIdx.fr = i;
-        if (cell === '후반_신규') colIdx.hn = i;
-        if (cell === '후반_복각') colIdx.hr = i;
-        if (cell === '메모') colIdx.memo = i;
-      });
-      return;
-    }
-
-    const g   = (row[colIdx.g]   || '').trim();
-    const ver = (row[colIdx.ver] || '').trim();
-    const s   = (row[colIdx.s]   || '').trim();
-    const e   = (row[colIdx.e]   || '').trim();
-    const fn  = (row[colIdx.fn]  || '').trim();
-    const fr  = (row[colIdx.fr]  || '').trim();
-    const hn  = (row[colIdx.hn]  || '').trim();
-    const hr  = (row[colIdx.hr]  || '').trim();
-    const memo= (row[colIdx.memo]|| '').trim();
-
-    if (g && GAME_CONFIG[g]) curGame = g;
+    const [g, ver, s, e, fn, fr, hn, hr, memo] = row;
+    // 헤더 행 스킵
+    if (ver === '버전' || ver === '시작 날짜') return;
+    // 게임명 행
+    if (g && GAME_CONFIG[g]) { curGame = g; }
     if (!curGame) return;
     if (!ver || !s) return;
 
     if (!games[curGame]) games[curGame] = [];
-    games[curGame].push({ v: ver, s, e, fn, fr, hn, hr, memo });
+    games[curGame].push({
+      v: ver,
+      s: s.replace(/\./g, '/'),
+      e: e ? e.replace(/\./g, '/') : '',
+      fn: fn || '', fr: fr || '',
+      hn: hn || '', hr: hr || '',
+      memo: memo || ''
+    });
   });
   return games;
 }
@@ -476,108 +419,14 @@ function renderVersionCard(gameName, v, showNext, nxt) {
   }
 
   return `<div class="vcard" style="--ga:${c.a};--gb:${c.b};--gm:${c.m};--gp:${c.p};">
-    <div style="display:flex;gap:14px;align-items:flex-start;">
-      <img src="${c.icon}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
-      <div style="flex:1;min-width:0;">
-        <p class="vc-game">${gameName}</p>
-        <p class="vc-ver">${v.v}버전</p>
-        <p class="vc-dates">(${fmt(s)} – ${fmt(e)})</p>
-      </div>
-    </div>
-    <div style="height:0.5px;background:var(--border);margin:14px 0;"></div>
+    <p class="vc-game">${gameName}</p>
+    <p class="vc-ver">${v.v}버전</p>
+    <p class="vc-dates">(${fmt(s)} – ${fmt(e)})</p>
     ${phSection('전반', info.half === '전반', f1cd, fnA, frA)}
     <div class="card-divider"></div>
     ${phSection('후반', info.half === '후반', f2cd, hnA, hrA)}
     ${v.memo ? `<div style="margin-top:10px;"><span class="tag-memo">${v.memo}</span></div>` : ''}
     ${nxtHtml}
-  </div>`;
-}
-
-// ── 갠트 타임라인 ─────────────────────────────────────
-function renderGantt() {
-  const rangeStart = addDays(TODAY, -30);
-  const rangeEnd   = addDays(TODAY, 80);
-  const totalMs    = rangeEnd - rangeStart;
-
-  function pct(d) {
-    if (!d) return null;
-    const p = (d - rangeStart) / totalMs * 100;
-    return Math.max(-5, Math.min(105, p));
-  }
-
-  const todayPct = pct(TODAY);
-
-  const months = [];
-  let mc = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
-  while (mc <= rangeEnd) {
-    const p = pct(mc);
-    if (p >= 0 && p <= 100) months.push({ label: `${mc.getMonth()+1}월`, pct: p });
-    mc = new Date(mc.getFullYear(), mc.getMonth()+1, 1);
-  }
-
-  const ticks = [];
-  for (let d = new Date(rangeStart); d <= rangeEnd; d = addDays(d, 14)) {
-    ticks.push({ label: `${d.getMonth()+1}/${d.getDate()}`, pct: pct(d) });
-  }
-
-  const rows = GAME_ORDER.filter(n => GAMES[n]).map(name => {
-    const c = GAME_CONFIG[name];
-    const bars = GAMES[name].map(v => {
-      const s = pd(v.s), e = pd(v.e);
-      if (!s || !e) return '';
-      const left = pct(s), right = pct(e);
-      const width = right - left;
-      if (width <= 0.5) return '';
-      const info = getPhase(v);
-      const isPast = info.st === 'past';
-      const isCur  = info.st === 'current';
-      const mid = info.mid || addDays(s, 21);
-      const midInBar = Math.min(100, Math.max(0, (mid - s) / (e - s) * 100));
-      const bg = isPast ? `${c.a}66` : c.a;
-      const fnA = sp(v.fn), frA = sp(v.fr), hnA = sp(v.hn), hrA = sp(v.hr);
-      const tooltipData = encodeURIComponent(JSON.stringify({
-        ver: v.v, color: c.a, bg: c.b, pip: c.p, gb: c.b,
-        fn: fnA, fr: frA, hn: hnA, hr: hrA,
-        s: fmt(s), e: fmt(e), half: isCur ? info.half : null
-      }));
-      return `<div class="gantt-bar" style="left:${left}%;width:${width}%;background:${bg};"
-        onmouseenter="showTT(event,'${tooltipData}')" onmousemove="moveTT(event)" onmouseleave="hideTT()">
-        <div class="gantt-phase-line" style="left:${midInBar}%;"></div>
-        <span class="gantt-bar-label" style="color:${c.b};">${v.v}버전</span>
-        ${isCur ? `<span style="position:absolute;right:5px;font-size:9px;font-weight:700;color:${c.b};">▶</span>` : ''}
-      </div>`;
-    }).join('');
-
-    return `<div class="gantt-row">
-      <div class="gantt-icon-cell">
-        <img src="${c.icon}" class="game-icon" title="${name}" onerror="this.style.display='none'">
-      </div>
-      <div class="gantt-track">
-        ${bars}
-        <div class="gantt-today-line" style="left:${todayPct}%;"></div>
-      </div>
-    </div>`;
-  }).join('');
-
-  const monthHtml = months.map(m =>
-    `<span class="gantt-month" style="left:calc(36px + ${m.pct}%)">${m.label}</span>`
-  ).join('');
-  const tickHtml = ticks.map(t =>
-    `<span class="gantt-tick" style="left:${t.pct}%;">${t.label}</span>`
-  ).join('');
-
-  return `<div class="gantt-wrap">
-    <p class="gantt-title">버전 일정 타임라인 · ${(TODAY.getMonth()+1)}월 ${TODAY.getDate()}일 기준</p>
-    <div class="gantt-scroll"><div class="gantt-inner">
-      <div style="position:relative;height:18px;padding-left:36px;margin-bottom:2px;">${monthHtml}</div>
-      <div class="gantt-rows">${rows}</div>
-      <div class="gantt-date-ticks">${tickHtml}</div>
-    </div></div>
-    <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;align-items:center;">
-      <div style="display:flex;align-items:center;gap:5px;"><div style="width:14px;height:2px;background:#e55;border-radius:1px;"></div><span style="font-size:11px;color:var(--text3);">오늘</span></div>
-      <div style="display:flex;align-items:center;gap:5px;"><div style="width:14px;height:10px;border-radius:2px;background:#aaa;opacity:0.4;"></div><span style="font-size:11px;color:var(--text3);">종료된 버전</span></div>
-      <span style="font-size:11px;color:var(--text3);">점선 = 전반/후반 구분</span>
-    </div>
   </div>`;
 }
 
@@ -707,7 +556,12 @@ let curTab = 'main';
 const subStates = {};
 
 function renderMain() {
-  const dateStr = `${TODAY.getMonth()+1}월 ${TODAY.getDate()}일`;
+  if (!scPageStart) {
+    scPageStart = new Date(TODAY);
+    scPageStart.setDate(scPageStart.getDate() - 42);
+  }
+  const today = TODAY;
+  const dateStr = `${today.getMonth()+1}월 ${today.getDate()}일`;
   const cards = GAME_ORDER
     .filter(name => GAMES[name])
     .map(name => {
@@ -717,14 +571,34 @@ function renderMain() {
       if (!cur) return '';
       return renderVersionCard(name, cur, true, vs[ci+1]);
     }).join('');
-  return `${renderGantt()}
+  const labels = GAME_ORDER.filter(n => GAMES[n]).map(name => {
+    const c = GAME_CONFIG[name];
+    return `<div class="sc-label-cell" style="color:${c.a};">${name}</div>`;
+  }).join('');
+  return `
+    <div class="sc-header">
+      <button class="sc-btn" onclick="scPrev()">← 이전 12주</button>
+      <button class="sc-btn today" onclick="scReset()">오늘</button>
+      <button class="sc-btn" onclick="scNext()">다음 12주 →</button>
+      <span class="sc-date-lbl" id="sc-date-lbl"></span>
+    </div>
+    <div class="sc-outer" style="margin-bottom:28px;">
+      <div class="sc-layout">
+        <div class="sc-label-col">${labels}<div class="sc-label-ruler"></div></div>
+        <div class="sc-viewport" id="sc-vp">
+          <div class="sc-track" id="sc-track">${buildScrubTrackHTML()}</div>
+          <div class="sc-redline"></div>
+        </div>
+      </div>
+    </div>
     <p class="section-label">오늘(${dateStr}) 기준 진행 중인 버전</p>
     <div class="main-grid">${cards}</div>
     <div class="legend">
       <span style="font-size:11px;color:var(--text3);">색상 구분 —</span>
       <span class="tag-n" style="--gb:#e8e8e8;--gp:#444;">신규</span>
       <span class="tag-r">복각</span>
-    </div>`;
+    </div>
+    ${renderGachaCalc()}`;
 }
 
 function renderCurrentPage(gameName) {
@@ -782,18 +656,19 @@ function render() {
   const mainEl = document.getElementById('main');
   const tabsEl = document.getElementById('tabs');
 
-  const tabDefs = [['main', '메인', null], ...GAME_ORDER.filter(n => GAMES[n]).map(n => [n, n, GAME_CONFIG[n].icon])];
-  tabsEl.innerHTML = tabDefs.map(([id, lbl, icon]) => {
+  const tabDefs = [['main', '메인'], ...GAME_ORDER.filter(n => GAMES[n]).map(n => [n, n])];
+  tabsEl.innerHTML = tabDefs.map(([id, lbl]) => {
     const c = GAME_CONFIG[id];
     const isActive = curTab === id;
     const ac = c ? c.a : 'var(--text)';
-    const iconHtml = icon ? `<img src="${icon}" class="tab-icon" onerror="this.style.display='none'">` : '';
     return `<button class="tab-btn${isActive ? ' active' : ''}" onclick="sw('${id}')"
-      style="color:${isActive ? ac : 'var(--text2)'};border-bottom-color:${isActive ? ac : 'transparent'};">${iconHtml}${lbl}</button>`;
+      style="color:${isActive ? ac : 'var(--text2)'};border-bottom-color:${isActive ? ac : 'transparent'};">${lbl}</button>`;
   }).join('');
 
   if (curTab === 'main') {
     mainEl.innerHTML = renderMain();
+    initScrubAfterRender();
+    requestAnimationFrame(gcInitForm);
   } else if (GAMES[curTab]) {
     mainEl.innerHTML = renderGamePage(curTab);
   }
@@ -813,41 +688,571 @@ window.fillC = (name, gameName) => {
   if (el) { el.value = name; window.rc(gameName); }
 };
 
-// ── 툴팁 ──────────────────────────────────────────────
-const ttEl = () => document.getElementById('g-tooltip');
-const ttIn = () => document.getElementById('g-tooltip-inner');
-
-window.showTT = function(e, raw) {
-  const d = JSON.parse(decodeURIComponent(raw));
-  const hasFront = d.fn.length || d.fr.length;
-  const hasBack  = d.hn.length || d.hr.length;
-
-  function tagN(arr) { return arr.map(n=>`<span class="g-tooltip-tag-n" style="background:${d.gb}55;color:${d.pip};">${n}</span>`).join(''); }
-  function tagR(arr) { return arr.map(n=>`<span class="g-tooltip-tag-r">${n}</span>`).join(''); }
-
-  ttIn().style.setProperty('--tt-color', d.color);
-  ttIn().innerHTML = `
-    <p class="g-tooltip-ver">${d.ver}버전</p>
-    ${hasFront ? `<p class="g-tooltip-phase${d.half==='전반'?' cur':''}">전반${d.half==='전반'?' ◀':''}</p><div class="g-tooltip-tags">${tagN(d.fn)}${tagR(d.fr)}</div>` : ''}
-    ${hasBack  ? `<p class="g-tooltip-phase${d.half==='후반'?' cur':''}">후반${d.half==='후반'?' ◀':''}</p><div class="g-tooltip-tags">${tagN(d.hn)}${tagR(d.hr)}</div>` : ''}
-    ${!hasFront&&!hasBack ? `<p style="font-size:12px;color:var(--text3);font-style:italic;">정보 없음</p>` : ''}
-    <p class="g-tooltip-date">${d.s} – ${d.e}</p>`;
-  ttEl().classList.add('show');
-  moveTT(e);
+// ── 가챠 계산기 ───────────────────────────────────────
+const GC_CFG = {
+  genshin:  { name:'원신',    icon:'icon-genshin.png',  ready:true,
+    c:{ hard:90, soft:74, base:0.006, incr:0.06, win:0.55, avg:62, capture:true },
+    w:{ hard:80, soft:63, base:0.007, incr:0.07, win:0.375, avg:52, fatepoint:true },
+    currency:'원석', fateName:'뒤얽힌 인연', gpp:160, truckWon:119000 },
+  starrail: { name:'붕스',    icon:'icon-starrail.png', ready:true,
+    c:{ hard:90, soft:74, base:0.006, incr:0.06, win:0.50, avg:62, capture:false },
+    w:{ hard:80, soft:66, base:0.008, incr:0.07, win:0.75, avg:52, fatepoint:false },
+    currency:'성옥', fateName:'별의 궤도 티켓', gpp:160, truckWon:119000 },
+  wuwa:     { name:'명조',    icon:'icon-wuwa.png',     ready:true,
+    c:{ hard:80, soft:62, base:0.008, incr:0.055, win:0.75, avg:50, capture:false },
+    w:{ hard:80, soft:62, base:0.008, incr:0.055, win:1.00, avg:50, fatepoint:false },
+    currency:'별의 소리', fateName:'금빛 파도의 무늬', fateNameW:'울린 조수의 무늬', gpp:160, truckWon:119000 },
+  endfield: { name:'엔드필드',icon:'icon-endfield.png', ready:false },
 };
-window.moveTT = function(e) {
-  const t = ttEl();
-  const x = e.clientX + 14, y = e.clientY + 14;
-  const w = t.offsetWidth, h = t.offsetHeight;
-  t.style.left = (x + w > window.innerWidth  ? e.clientX - w - 8 : x) + 'px';
-  t.style.top  = (y + h > window.innerHeight ? e.clientY - h - 8 : y) + 'px';
+const GC_ORDER = ['genshin','starrail','wuwa','endfield'];
+const GC_ST = [
+  { k:'여유로움',     sc:'#3B6D11', sb:'#EAF3DE', sp:'#27500A', msg:'충분해! 최악이 와도 충분히 먹을 수 있어.' },
+  { k:'할만한데?',    sc:'#0F6E56', sb:'#E1F5EE', sp:'#085041', msg:'평균적으론 돼. 운이 나쁘면 좀 빡세지긴 해.' },
+  { k:'쓰읍 이건 좀', sc:'#854F0B', sb:'#FAEEDA', sp:'#633806', msg:'이건 좀 아닌 것 같은데. 엄청 운이 따라줘야 해.' },
+  { k:'다시 생각해봐', sc:'#A32D2D', sb:'#FCEBEB', sp:'#791F1F', msg:'솔직히 말해줄게. 재화가 많이 부족해.' }
+];
+let gcGame = 'genshin';
+
+function gcProb(pity, pulls, cfg) {
+  if (pulls <= 0) return 0;
+  let none = 1;
+  for (let i = 0; i < pulls; i++) {
+    const p = pity + i + 1;
+    const r = p < cfg.soft ? cfg.base : p < cfg.hard ? cfg.base + cfg.incr * (p - cfg.soft + 1) : 1;
+    none *= (1 - Math.min(1, r));
+    if (none < 0.0001) break;
+  }
+  return (1 - none) * 100;
+}
+
+function gcAvgRem(pity, cfg) {
+  return pity <= cfg.soft
+    ? Math.max(1, Math.round(cfg.avg - pity * (cfg.avg / cfg.hard)))
+    : Math.max(1, Math.round((cfg.hard - cfg.soft) / 2 - (pity - cfg.soft) * 0.6));
+}
+
+function gcCharBest(n, pity, cfg) { return Math.round(gcAvgRem(pity, cfg) + (n - 1) * cfg.avg); }
+function gcCharAvg(n, guar, pity, cfg) {
+  const rem = gcAvgRem(pity, cfg), per = cfg.avg + (1 - cfg.win) * cfg.avg;
+  return guar === '확 천장'
+    ? Math.round(rem + (n - 1) * per)
+    : Math.round(rem + (1 - cfg.win) * cfg.avg + (n - 1) * per);
+}
+function gcCharWorst(n, guar, pity, cfg) {
+  const rem = Math.max(1, cfg.hard - pity), conf = guar === '확 천장';
+  let tot = 0, con = 0;
+  if (conf) {
+    tot += rem;
+    for (let i = 1; i < n; i++) {
+      if (cfg.capture && con === 3) { tot += cfg.hard; con = 0; } else { tot += cfg.hard * 2; con++; }
+    }
+  } else {
+    for (let i = 0; i < n; i++) {
+      if (cfg.capture && con === 3) { tot += cfg.hard; con = 0; } else { tot += (i === 0 ? rem + cfg.hard : cfg.hard * 2); con++; }
+    }
+  }
+  return tot;
+}
+function gcWeapBest(n, pity, cfg) { return Math.round(gcAvgRem(pity, cfg) + (n - 1) * cfg.avg); }
+function gcWeapAvg(n, guar, pity, cfg) {
+  const rem = gcAvgRem(pity, cfg);
+  if (cfg.fatepoint) {
+    const isS = guar === '운명 포인트 1';
+    return Math.round(rem + (isS ? 0.25 : 0.75) * cfg.avg + (n - 1) * 91);
+  }
+  const per = cfg.avg + (1 - cfg.win) * cfg.avg;
+  return guar === '확 천장'
+    ? Math.round(rem + (n - 1) * per)
+    : Math.round(rem + (1 - cfg.win) * cfg.avg + (n - 1) * per);
+}
+function gcWeapWorst(n, guar, pity, cfg) {
+  const rem = Math.max(1, cfg.hard - pity);
+  if (cfg.fatepoint) {
+    const isS = guar === '운명 포인트 1';
+    return isS ? rem + cfg.hard + (n - 1) * cfg.hard * 2 : rem + cfg.hard * 2 + (n - 1) * cfg.hard * 2;
+  }
+  if (cfg.win >= 1.0) return rem + (n - 1) * cfg.hard;
+  return guar === '확 천장'
+    ? rem + (n - 1) * cfg.hard * 2
+    : rem + cfg.hard + (n - 1) * cfg.hard * 2;
+}
+
+function gcGetSeg(id) { const e = document.querySelector('#'+id+' button.on'); return e ? e.textContent.trim() : ''; }
+
+function gcZoneBar(best, avg, worst, avail) {
+  const mx = Math.max(avail * 1.1, worst * 1.1, 1);
+  const pB = Math.min(93, best/mx*100), pA = Math.min(93, avg/mx*100), pW = Math.min(93, worst/mx*100), pV = Math.min(97, avail/mx*100);
+  const mc = avail >= worst ? '#3B6D11' : avail >= avg ? '#0F6E56' : avail >= best ? '#854F0B' : '#A32D2D';
+  return `<div style="position:relative;margin-bottom:6px;">
+    <div style="height:12px;border-radius:6px;overflow:hidden;display:flex;background:var(--bg3);">
+      <div style="width:${pB}%;background:#3B6D11;opacity:0.75;"></div>
+      <div style="width:${pA-pB}%;background:#C88A00;opacity:0.75;"></div>
+      <div style="width:${pW-pA}%;background:#C0531A;opacity:0.75;"></div>
+      <div style="flex:1;background:#A32D2D;opacity:0.2;"></div>
+    </div>
+    <div style="position:absolute;top:-4px;left:${pV}%;transform:translateX(-50%);width:2.5px;height:20px;background:${mc};border-radius:2px;"></div>
+  </div>
+  <div style="position:relative;height:16px;margin-bottom:4px;">
+    ${[{p:pB,v:best},{p:pA,v:avg},{p:pW,v:worst}].map(({p,v})=>`
+      <span style="position:absolute;left:${p}%;transform:translateX(-50%);font-size:9px;color:var(--text3);">${v}</span>`).join('')}
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:10px;">
+    <span style="color:${mc};font-weight:500;">▲ 보유 ${avail}뽑</span>
+    <span style="color:var(--text3);">최선 ${best} · 평균 ${avg} · 최악 ${worst}</span>
+  </div>`;
+}
+
+function renderGachaCalc() {
+  const btns = GC_ORDER.map(id => {
+    const g = GC_CFG[id], gc = GAME_CONFIG[g.name] || {};
+    const on = id === gcGame;
+    const ac = gc.a || '#999';
+    return `<button class="gc-game-btn${on?' on':''}" id="gc-gb-${id}" onclick="gcSelGame('${id}',this)"
+      style="${on?`border-color:${ac};color:${ac};background:var(--bg);font-weight:500;`:''}${!g.ready?'opacity:0.45;':''}">
+      <img src="${g.icon}" onerror="this.style.display='none'">${g.name}
+    </button>`;
+  }).join('');
+  return `<div style="margin-top:28px;">
+    <p class="section-label">가챠 기댓값 계산기</p>
+    <div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:20px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">${btns}</div>
+      <div id="gc-form"></div>
+    </div>
+    <div id="gc-res" style="margin-top:12px;"></div>
+  </div>`;
+}
+
+function gcInitForm() {
+  const el = document.getElementById('gc-form');
+  if (!el) return;
+  const g = GC_CFG[gcGame];
+  if (!g || !g.ready) {
+    el.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--text2);font-size:13px;">이 게임은 아직 준비 중이야. 곧 추가할게!</div>`;
+    return;
+  }
+  const gc = GAME_CONFIG[g.name] || {}, ac = gc.a||'#BA7517', bc = gc.b||'#FEF3E0';
+  el.style.setProperty('--gc-a', ac);
+  el.style.setProperty('--gc-b', bc);
+  el.innerHTML = `
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:13px;">
+      <div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;">배너</p>
+        <div class="gc-seg" id="gc-bt">
+          <button class="on" onclick="gcSetSeg(this,'gc-bt');gcUpBanner()">캐릭터</button>
+          <button onclick="gcSetSeg(this,'gc-bt');gcUpBanner()">무기</button>
+        </div>
+      </div>
+      <div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;" id="gc-gl">목표 돌파</p>
+        <div class="gc-seg" id="gc-cop"></div>
+      </div>
+      <div id="gc-gur-wrap">
+        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;">천장 상태</p>
+        <div class="gc-seg" id="gc-gur"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;">현재 스택</p>
+        <input class="gc-inp" type="number" id="gc-pity" min="0" max="${g.c.hard-1}" value="0" style="width:90px;">
+      </div>
+      <div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;">${g.currency}</p>
+        <input class="gc-inp" type="number" id="gc-gems" min="0" value="0" style="width:110px;">
+      </div>
+      <div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;" id="gc-fate-lbl">${g.fateName}</p>
+        <input class="gc-inp" type="number" id="gc-fates" min="0" value="0" style="width:100px;">
+      </div>
+    </div>
+    <button class="gc-go" onclick="gcDoCalc()" style="background:${ac};color:${bc};">계산하기</button>`;
+  gcUpBanner();
+}
+
+window.gcSelGame = function(id, btn) {
+  gcGame = id;
+  GC_ORDER.forEach(gid => {
+    const b = document.getElementById('gc-gb-'+gid);
+    if (!b) return;
+    const gc = GAME_CONFIG[GC_CFG[gid].name] || {}, ac = gc.a||'#999';
+    if (gid === id) {
+      b.classList.add('on');
+      b.style.cssText += `border-color:${ac};color:${ac};background:var(--bg);font-weight:500;`;
+    } else {
+      b.classList.remove('on');
+      b.style.borderColor = ''; b.style.color = ''; b.style.background = ''; b.style.fontWeight = '';
+    }
+  });
+  document.getElementById('gc-res').innerHTML = '';
+  gcInitForm();
 };
-window.hideTT = function() { ttEl().classList.remove('show'); };
+
+window.gcSetSeg = function(btn, id) {
+  document.querySelectorAll('#'+id+' button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+};
+
+window.gcUpBanner = function() {
+  const isW = gcGetSeg('gc-bt') === '무기';
+  const g = GC_CFG[gcGame];
+  const gl = document.getElementById('gc-gl'), pi = document.getElementById('gc-pity');
+  if (gl) gl.textContent = isW ? '목표 재련' : '목표 돌파';
+  if (pi) pi.max = isW ? (g&&g.w ? g.w.hard-1 : 79) : (g&&g.c ? g.c.hard-1 : 89);
+  const fateLbl = document.getElementById('gc-fate-lbl');
+  if (fateLbl && g) fateLbl.textContent = isW ? (g.fateNameW || g.fateName) : g.fateName;
+  const cop = document.getElementById('gc-cop'), gur = document.getElementById('gc-gur');
+  if (!cop || !gur) return;
+  cop.innerHTML = (isW ? ['R1','R2','R3','R4','R5'] : ['C0','C1','C2','C3','C4','C5','C6'])
+    .map((l,i)=>`<button${i===0?' class="on"':''} onclick="gcSetSeg(this,'gc-cop')">${l}</button>`).join('');
+  const useFP = isW && g && g.w && g.w.fatepoint;
+  const noGuar = isW && g && g.w && g.w.win >= 1.0;
+  const gurWrap = document.getElementById('gc-gur-wrap');
+  if (gurWrap) gurWrap.style.display = noGuar ? 'none' : '';
+  gur.innerHTML = useFP
+    ? `<button class="on" onclick="gcSetSeg(this,'gc-gur')">운명 포인트 0</button><button onclick="gcSetSeg(this,'gc-gur')">운명 포인트 1</button>`
+    : `<button class="on" onclick="gcSetSeg(this,'gc-gur')">반 천장</button><button onclick="gcSetSeg(this,'gc-gur')">확 천장</button>`;
+};
+
+window.gcDoCalc = function() {
+  const g = GC_CFG[gcGame]; if (!g || !g.ready) return;
+  const gc = GAME_CONFIG[g.name] || {}, ac = gc.a||'#BA7517', bc = gc.b||'#FEF3E0';
+  const isW = gcGetSeg('gc-bt') === '무기', guar = gcGetSeg('gc-gur'), cfg = isW ? g.w : g.c;
+  const pity = Math.min(parseInt(document.getElementById('gc-pity').value)||0, cfg.hard-1);
+  const gems = parseInt(document.getElementById('gc-gems').value)||0;
+  const fates = parseInt(document.getElementById('gc-fates').value)||0;
+  const cstr = gcGetSeg('gc-cop');
+  const n = isW ? parseInt(cstr.replace('R','')) : parseInt(cstr.replace('C',''))+1;
+  const avail = Math.floor(gems/g.gpp) + fates;
+
+  const best  = isW ? gcWeapBest(n, pity, cfg)       : gcCharBest(n, pity, cfg);
+  const avg   = isW ? gcWeapAvg(n, guar, pity, cfg)  : gcCharAvg(n, guar, pity, cfg);
+  const worst = isW ? gcWeapWorst(n, guar, pity, cfg): gcCharWorst(n, guar, pity, cfg);
+
+  let st = avail >= worst ? GC_ST[0] : avail >= avg ? GC_ST[1] : avail >= Math.round(avg*0.6) ? GC_ST[2] : GC_ST[3];
+  const {k, sc, sb, sp, msg} = st;
+
+  const dAvg = Math.max(0, avg-avail), dWorst = Math.max(0, worst-avail);
+  const sAvg = Math.max(0, avail-avg), sWorst = Math.max(0, avail-worst);
+  const tAvg = dAvg>0 ? Math.ceil(dAvg*160/8080) : 0, tWorst = dWorst>0 ? Math.ceil(dWorst*160/8080) : 0;
+
+  const wr = isW && cfg.fatepoint
+    ? (guar==='운명 포인트 1'?0.75:0.375)
+    : (guar==='확 천장'?1.0:cfg.win);
+  const p10s = Math.round(gcProb(pity,10,cfg)), p10p = Math.round(p10s*wr);
+  const pAs  = Math.round(gcProb(pity,avail,cfg)), pAp = Math.round(pAs*wr);
+  const pNext = gcProb(pity,1,cfg), pNextP = (pNext*wr).toFixed(1), pNext5 = pNext.toFixed(1);
+  const enoughNext = avail >= best;
+
+  function sbox(lbl, val, isCur) {
+    const ok = avail >= val;
+    const tc = isCur ? (ok?sc:'#A32D2D') : ok?sc:'var(--text2)';
+    const brd = isCur && ok ? `border:1.5px solid ${sc};` : '';
+    return `<div class="gc-stat" style="${brd}">
+      <p style="font-size:16px;font-weight:500;color:${tc};">${val}</p>
+      <p style="font-size:10px;color:var(--text2);margin-top:2px;">${lbl}</p>
+      <p style="font-size:11px;margin-top:2px;color:${ok?sc:'#A32D2D'};">${ok?'✓':'✗'}</p>
+    </div>`;
+  }
+  const nextBox = `<div class="gc-stat">
+    <p style="font-size:16px;font-weight:500;color:${sc};">${pNextP}%</p>
+    <p style="font-size:10px;color:var(--text2);margin-top:2px;">다음 1뽑</p>
+    <p style="font-size:10px;color:var(--text3);margin-top:2px;">5성 ${pNext5}%</p>
+  </div>`;
+
+  function costBox(lbl, def, trucks, sur, isAvg) {
+    const bg=isAvg?sb:'var(--bg2)', tc=isAvg?sp:'var(--text)', subc=isAvg?sc:'var(--text2)';
+    return def>0
+      ? `<div style="flex:1;min-width:130px;background:${bg};border-radius:var(--radius);padding:11px 12px;">
+          <p style="font-size:10px;color:${subc};margin-bottom:3px;">${lbl}</p>
+          <p style="font-size:17px;font-weight:500;color:${tc};">${def}뽑 부족</p>
+          <p style="font-size:12px;color:${subc};margin-top:2px;">${trucks}트럭 · ${(trucks*g.truckWon).toLocaleString()}원</p>
+        </div>`
+      : `<div style="flex:1;min-width:130px;background:${bg};border-radius:var(--radius);padding:11px 12px;">
+          <p style="font-size:10px;color:${subc};margin-bottom:3px;">${lbl}</p>
+          <p style="font-size:17px;font-weight:500;color:${isAvg?tc:'#3B6D11'};">${sur}뽑 여유</p>
+          <p style="font-size:12px;color:${subc};margin-top:2px;">추가 과금 없음</p>
+        </div>`;
+  }
+
+  document.getElementById('gc-res').innerHTML = `
+  <div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden;">
+    <div style="padding:16px 18px;background:${sb};">
+      <p style="font-size:22px;font-weight:600;color:${sc};margin-bottom:4px;">${k}</p>
+      <p style="font-size:13px;color:var(--text2);">${msg}</p>
+    </div>
+    <div style="height:0.5px;background:var(--border);"></div>
+    <div style="padding:13px 15px;">
+      <p style="font-size:11px;color:var(--text2);margin-bottom:8px;">시나리오별 필요 뽑기</p>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;">
+        ${sbox('최선',best,false)}${sbox('평균',avg,false)}${sbox('최악',worst,false)}${sbox('현재 보유',avail,true)}${nextBox}
+      </div>
+    </div>
+    <div style="height:0.5px;background:var(--border);"></div>
+    <div style="padding:12px 15px;">
+      <p style="font-size:11px;color:var(--text2);margin-bottom:10px;">보유 뽑기 위치</p>
+      ${gcZoneBar(best,avg,worst,avail)}
+    </div>
+    <div style="height:0.5px;background:var(--border);"></div>
+    <div style="padding:12px 15px;display:flex;gap:8px;flex-wrap:wrap;">
+      ${costBox('평균 기준',dAvg,tAvg,sAvg,true)}${costBox('최악 기준',dWorst,tWorst,sWorst,false)}
+    </div>
+    <div style="height:0.5px;background:var(--border);"></div>
+    <div style="padding:10px 15px;background:var(--bg2);display:flex;gap:20px;flex-wrap:wrap;">
+      <div>
+        <p style="font-size:11px;color:var(--text2);">10뽑 하면 ★5 나올 확률</p>
+        <p style="font-size:15px;font-weight:500;color:${sc};">${p10s}% <span style="font-size:12px;font-weight:400;">· 픽업이면 ${p10p}%</span></p>
+      </div>
+      <div>
+        <p style="font-size:11px;color:var(--text2);">보유 뽑기 전부 쓰면 ★5 확률</p>
+        <p style="font-size:15px;font-weight:500;color:${sc};">${pAs}% <span style="font-size:12px;font-weight:400;">· 픽업이면 ${pAp}%</span></p>
+      </div>
+    </div>
+  </div>`;
+};
+
+// ── 비교 탭 스크러버 ──────────────────────────────────
+const PX_DAY = 28;
+const PAGE_DAYS = 84;
+let scPageStart = null;
+let scTX = 0;
+let scDragHandlers = null;
+
+function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+
+function scGetDate() {
+  const vp = document.getElementById('sc-vp');
+  if (!vp) return new Date(TODAY);
+  const W = vp.getBoundingClientRect().width;
+  const idx = (W / 2 - scTX) / PX_DAY;
+  const d = new Date(scPageStart);
+  d.setDate(d.getDate() + Math.round(idx));
+  return d;
+}
+
+function scApply() {
+  const track = document.getElementById('sc-track');
+  if (track) track.style.transform = `translateX(${Math.round(scTX)}px)`;
+}
+
+function scUpdateDate() {
+  const d = scGetDate();
+  const el = document.getElementById('sc-date-lbl');
+  if (el) el.textContent = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+  GAME_ORDER.forEach(name => {
+    (GAMES[name] || []).forEach((v, i) => {
+      const bar = document.getElementById(`scb-${name}-${i}`);
+      if (!bar) return;
+      const s = pd(v.s), e = pd(v.e);
+      const c = GAME_CONFIG[name];
+      if (s && e && d >= s && d < e) {
+        bar.style.background = c.a; bar.style.color = c.b;
+        bar.style.fontWeight = '600'; bar.style.boxShadow = `0 0 0 1.5px ${c.a}`;
+      } else {
+        bar.style.background = c.b; bar.style.color = c.p;
+        bar.style.fontWeight = '400'; bar.style.boxShadow = 'none';
+      }
+    });
+  });
+}
+
+function buildScrubBarsHTML(name) {
+  const c = GAME_CONFIG[name];
+  const vs = GAMES[name] || [];
+  const pageEnd = new Date(scPageStart);
+  pageEnd.setDate(pageEnd.getDate() + PAGE_DAYS);
+  return vs.map((v, i) => {
+    const s = pd(v.s), e = pd(v.e);
+    if (!s || !e || e <= scPageStart || s >= pageEnd) return '';
+    const ld = Math.max(0, daysBetween(scPageStart, s));
+    const rd = Math.min(PAGE_DAYS, daysBetween(scPageStart, e));
+    const left = ld * PX_DAY, width = Math.max(4, (rd - ld) * PX_DAY);
+    const isNow = TODAY >= s && TODAY < e;
+    return `<div class="sc-bar" id="scb-${name}-${i}" data-game="${name}" data-idx="${i}"
+      style="left:${left}px;width:${width}px;background:${isNow?c.a:c.b};color:${isNow?c.b:c.p};font-weight:${isNow?600:400};${isNow?`box-shadow:0 0 0 1.5px ${c.a};`:''}"
+      >${v.v}</div>`;
+  }).join('');
+}
+
+function buildRulerHTML() {
+  let html = '';
+  let prevMonth = -1, prevYear = -1;
+  for (let i = 0; i < PAGE_DAYS; i++) {
+    const d = new Date(scPageStart);
+    d.setDate(d.getDate() + i);
+    const x = i * PX_DAY;
+    const day = d.getDate(), month = d.getMonth(), year = d.getFullYear();
+    const isNewMonth = month !== prevMonth;
+    const isMon = d.getDay() === 1;
+    if (isNewMonth) {
+      const yPart = year !== prevYear ? `${year}년 ` : '';
+      html += `<div style="position:absolute;left:${x+3}px;top:4px;font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;pointer-events:none;">${yPart}${month+1}월</div>`;
+      prevMonth = month; prevYear = year;
+    }
+    const tickH = isNewMonth ? 20 : isMon ? 12 : 6;
+    const tickC = isNewMonth ? 'var(--text2)' : 'var(--border2)';
+    html += `<div style="position:absolute;left:${x+PX_DAY/2}px;bottom:0;width:1px;height:${tickH}px;background:${tickC};pointer-events:none;"></div>`;
+    if (isNewMonth || isMon || day % 5 === 0) {
+      const lc = isNewMonth ? 'var(--text)' : 'var(--text3)';
+      const fw = isNewMonth ? '600' : '400';
+      html += `<div style="position:absolute;left:${x}px;bottom:${tickH+2}px;width:${PX_DAY}px;text-align:center;font-size:9px;color:${lc};font-weight:${fw};pointer-events:none;">${day}</div>`;
+    }
+  }
+  return `<div class="sc-ruler" style="width:${PAGE_DAYS*PX_DAY}px;">${html}</div>`;
+}
+
+function buildScrubTrackHTML() {
+  const trackW = PAGE_DAYS * PX_DAY;
+  const rows = GAME_ORDER.filter(n => GAMES[n]).map(name =>
+    `<div class="sc-bar-row" style="width:${trackW}px;">${buildScrubBarsHTML(name)}</div>`
+  ).join('');
+  return rows + buildRulerHTML();
+}
+
+
+function scInitPos() {
+  const vp = document.getElementById('sc-vp');
+  if (!vp) return;
+  const W = vp.getBoundingClientRect().width;
+  const off = daysBetween(scPageStart, TODAY);
+  const clamped = Math.max(0, Math.min(PAGE_DAYS - 1, off));
+  scTX = W / 2 - clamped * PX_DAY;
+  scApply();
+  scUpdateDate();
+}
+
+function initScrubDrag() {
+  const vp = document.getElementById('sc-vp');
+  if (!vp) return;
+  if (scDragHandlers) {
+    window.removeEventListener('mousemove', scDragHandlers.move);
+    window.removeEventListener('mouseup', scDragHandlers.end);
+  }
+  let dragging = false, startX = 0, startTX = 0;
+  const onStart = x => { dragging = true; startX = x; startTX = scTX; vp.classList.add('grabbing'); };
+  const onMove = x => {
+    if (!dragging) return;
+    const vpEl = document.getElementById('sc-vp');
+    const W = vpEl ? vpEl.getBoundingClientRect().width : 800;
+    let proposed = startTX + (x - startX);
+    let needsRebuild = false;
+    while (proposed > W / 2) {
+      scPageStart = new Date(scPageStart);
+      scPageStart.setDate(scPageStart.getDate() - PAGE_DAYS);
+      proposed -= PAGE_DAYS * PX_DAY;
+      startTX -= PAGE_DAYS * PX_DAY;
+      needsRebuild = true;
+    }
+    while (proposed < W / 2 - PAGE_DAYS * PX_DAY) {
+      scPageStart = new Date(scPageStart);
+      scPageStart.setDate(scPageStart.getDate() + PAGE_DAYS);
+      proposed += PAGE_DAYS * PX_DAY;
+      startTX += PAGE_DAYS * PX_DAY;
+      needsRebuild = true;
+    }
+    if (needsRebuild) {
+      const track = document.getElementById('sc-track');
+      if (track) track.innerHTML = buildScrubTrackHTML();
+    }
+    scTX = proposed;
+    scApply(); scUpdateDate();
+  };
+  const onEnd = () => { dragging = false; vp.classList.remove('grabbing'); };
+  scDragHandlers = { move: e => { if (dragging) onMove(e.clientX); }, end: onEnd };
+  vp.addEventListener('mousedown', e => onStart(e.clientX));
+  window.addEventListener('mousemove', scDragHandlers.move);
+  window.addEventListener('mouseup', scDragHandlers.end);
+  vp.addEventListener('touchstart', e => onStart(e.touches[0].clientX), { passive: true });
+  vp.addEventListener('touchmove', e => { e.preventDefault(); onMove(e.touches[0].clientX); }, { passive: false });
+  vp.addEventListener('touchend', onEnd);
+}
+
+function initScrubTooltip() {
+  const vp = document.getElementById('sc-vp');
+  if (!vp) return;
+  let tip = document.getElementById('sc-tip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = 'sc-tip';
+    tip.style.cssText = 'display:none;position:fixed;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:12px;z-index:9999;width:200px;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.13);';
+    document.body.appendChild(tip);
+  }
+  let hideTimer;
+  vp.addEventListener('mousemove', e => {
+    const bar = e.target.closest('[data-game]');
+    if (!bar) {
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => { tip.style.display = 'none'; }, 80);
+      return;
+    }
+    clearTimeout(hideTimer);
+    const name = bar.dataset.game, idx = parseInt(bar.dataset.idx);
+    const v = (GAMES[name] || [])[idx];
+    if (!v) return;
+    const c = GAME_CONFIG[name];
+    const fnA = sp(v.fn), frA = sp(v.fr), hnA = sp(v.hn), hrA = sp(v.hr);
+    const tagN = arr => arr.map(n => `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${c.b};color:${c.p};font-weight:500;">${n}</span>`).join('');
+    const tagR = arr => arr.map(n => `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--text2);">${n}</span>`).join('');
+    const half = (na, ra) => (na.length || ra.length) ? tagN(na) + tagR(ra) : `<span style="font-size:10px;color:var(--text3);">정보 없음</span>`;
+    tip.innerHTML = `
+      <div style="font-size:10px;color:${c.a};font-weight:700;margin-bottom:3px;">${name} ${v.v}버전</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;">${v.s} ~ ${v.e}</div>
+      <div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px;">전반</div>
+      <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:7px;">${half(fnA, frA)}</div>
+      <div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px;">후반</div>
+      <div style="display:flex;flex-wrap:wrap;gap:3px;">${half(hnA, hrA)}</div>
+      ${v.memo ? `<div style="margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border);font-size:10px;color:var(--text2);">${v.memo}</div>` : ''}`;
+    const tipW = 200, tipH = tip.offsetHeight;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let lx = e.clientX + 14;
+    let ty = e.clientY - 10;
+    if (lx + tipW > vw - 8) lx = e.clientX - tipW - 14;
+    if (ty + tipH > vh - 8) ty = e.clientY - tipH - 10;
+    if (ty < 4) ty = 4;
+    tip.style.left = lx + 'px';
+    tip.style.top = ty + 'px';
+    tip.style.display = 'block';
+  });
+  vp.addEventListener('mouseleave', () => { clearTimeout(hideTimer); tip.style.display = 'none'; });
+}
+
+function initScrubAfterRender() {
+  requestAnimationFrame(() => { scInitPos(); initScrubDrag(); initScrubTooltip(); });
+}
+
+window.scPrev = function() {
+  scPageStart = new Date(scPageStart);
+  scPageStart.setDate(scPageStart.getDate() - PAGE_DAYS);
+  const track = document.getElementById('sc-track');
+  if (track) track.innerHTML = buildScrubTrackHTML();
+  const vp = document.getElementById('sc-vp');
+  const W = vp ? vp.getBoundingClientRect().width : 800;
+  scTX = W / 2 - Math.floor(PAGE_DAYS / 2) * PX_DAY;
+  scApply(); scUpdateDate();
+};
+
+window.scNext = function() {
+  scPageStart = new Date(scPageStart);
+  scPageStart.setDate(scPageStart.getDate() + PAGE_DAYS);
+  const track = document.getElementById('sc-track');
+  if (track) track.innerHTML = buildScrubTrackHTML();
+  const vp = document.getElementById('sc-vp');
+  const W = vp ? vp.getBoundingClientRect().width : 800;
+  scTX = W / 2 - Math.floor(PAGE_DAYS / 2) * PX_DAY;
+  scApply(); scUpdateDate();
+};
+
+window.scReset = function() {
+  scPageStart = new Date(TODAY);
+  scPageStart.setDate(scPageStart.getDate() - 42);
+  const track = document.getElementById('sc-track');
+  if (track) track.innerHTML = buildScrubTrackHTML();
+  scInitPos();
+};
 
 // ── 데이터 fetch ──────────────────────────────────────
 async function fetchData() {
   try {
-    const res = await fetch(CSV_URL + '&t=' + Date.now(), { cache: 'no-store' });
+    const res = await fetch(CSV_URL);
     if (!res.ok) throw new Error('fetch failed');
     const text = await res.text();
     const rows = parseCSV(text);
