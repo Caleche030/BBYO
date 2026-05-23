@@ -228,9 +228,10 @@
   .tl-current { background: var(--gb); border: 0.5px solid var(--gm); }
   .tl-future  { background: var(--bg); border: 0.5px solid var(--border); }
   .tl-past    { background: var(--bg); border: 0.5px solid var(--border); opacity: 0.65; }
-  .tl-sep { position:relative; display:flex; align-items:center; gap:8px; margin:20px 0 10px; }
-  .tl-sep-label { font-size:11px; font-weight:700; color:var(--ga); letter-spacing:0.04em; white-space:nowrap; padding:3px 10px; background:var(--gb); border-radius:20px; }
-  .tl-sep-line { flex:1; height:1px; background:var(--border2); }
+  .tl-sep { display:flex; align-items:center; gap:10px; margin:32px 0 14px; }
+  .tl-sep-bar { width:4px; height:20px; border-radius:2px; background:var(--ga); flex-shrink:0; }
+  .tl-sep-label { font-size:16px; font-weight:700; color:var(--ga); }
+  .tl-sep-line { flex:1; height:1px; background:var(--border); }
   .tl-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
   .tl-ver { font-size: 15px; font-weight: 600; }
   .tl-dates { font-size: 12px; color: var(--text2); margin-top: 2px; }
@@ -307,16 +308,16 @@
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyz6c92R-LC6sF8uNb5HPpHkZsjkHZXJoO6J8kmyjR84hAzrOyiX-bUmuPRJhXVSbUk8-TOm8FFM0p/pub?output=csv';
 
 const GAME_CONFIG = {
-  '원신':     { id:'genshin',   a:'#BA7517', b:'#FEF3E0', m:'#FAC775', p:'#633806', icon:'icon-genshin.png' },
-  '명조':     { id:'wuwa',      a:'#0F6E56', b:'#E1F5EE', m:'#9FE1CB', p:'#085041', icon:'icon-wuwa.png' },
-  '붕스':     { id:'starrail',  a:'#534AB7', b:'#EEEDFE', m:'#CECBF6', p:'#3C3489', icon:'icon-starrail.png' },
-  '엔드필드': { id:'endfield',  a:'#185FA5', b:'#E6F1FB', m:'#B5D4F4', p:'#0C447C', icon:'icon-endfield.png' },
+  '원신':     { id:'genshin',   a:'#0D9488', b:'#F0FDFA', m:'#5EEAD4', p:'#115E59', icon:'icon-genshin.png' },
+  '명조':     { id:'wuwa',      a:'#A8A010', b:'#F7F6E0', m:'#C0B820', p:'#1A1A08', icon:'icon-wuwa.png' },
+  '붕스':     { id:'starrail',  a:'#A07C1A', b:'#FEF9E8', m:'#C8A02A', p:'#1A2E5A', icon:'icon-starrail.png' },
+  '엔드필드': { id:'endfield',  a:'#C86820', b:'#FFF3E8', m:'#D87830', p:'#5A5A64', icon:'icon-endfield.png' },
 };
 const GAME_ORDER = ['원신', '붕스', '명조', '엔드필드'];
 
 const REGION_MAP = {
   genshin:  { '1':'몬드 & 리월', '2':'이나즈마', '3':'수메르', '4':'폰타인', '5':'나타', '6':'노드크라이', '7':'스네즈나야' },
-  starrail: { '1':'우주 정거장 · 야릴로Ⅵ · 선주 나부', '2':'페나코니 · 선주 나부', '3':'엠포리어스 · 페나코니', '4':'낙원' },
+  starrail: { '1':'우주 정거장 · 야릴로Ⅵ · 선주 나부', '2':'페나코니 · 선주 나부', '3':'엠포리어스 · 페나코니', '4':'이상 낙원' },
   wuwa:     { '1':'금주', '2':'리나시타', '3':'라하이로이', '3.6':'몽주' },
   endfield: { '1':'4번협곡 · 무릉성' },
 };
@@ -659,11 +660,9 @@ function renderTimelinePage(gameName) {
     const { label, key } = getRegionInfo(regionMap, vStr);
     if (key !== lastGroupKey) {
       lastGroupKey = key;
-      const isSubVer = parseFloat(key) !== major;
-      const sepTitle = label
-        ? (isSubVer ? `${key}~ — ${label}` : `${major}.x — ${label}`)
-        : `${major}.x`;
-      html += `<div class="tl-sep" style="--ga:${c.a};--gb:${c.b};">
+      const sepTitle = label || `${major}.x`;
+      html += `<div class="tl-sep" style="--ga:${c.a};">
+        <div class="tl-sep-bar"></div>
         <span class="tl-sep-label">${sepTitle}</span>
         <div class="tl-sep-line"></div>
       </div>`;
