@@ -309,8 +309,8 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyz6c92R-LC6sF
 
 const GAME_CONFIG = {
   '원신':     { id:'genshin',   a:'#0D9488', b:'#F0FDFA', m:'#5EEAD4', p:'#115E59', icon:'icon-genshin.png' },
-  '명조':     { id:'wuwa',      a:'#A8A010', b:'#F7F6E0', m:'#C0B820', p:'#1A1A08', icon:'icon-wuwa.png' },
-  '붕스':     { id:'starrail',  a:'#A07C1A', b:'#FEF9E8', m:'#C8A02A', p:'#1A2E5A', icon:'icon-starrail.png' },
+  '명조':     { id:'wuwa',      a:'#38362A', b:'#F5F3E4', m:'#B0A818', p:'#141208', icon:'icon-wuwa.png' },
+  '붕스':     { id:'starrail',  a:'#1B3A6B', b:'#EEF2FC', m:'#C8A020', p:'#0C1C3D', icon:'icon-starrail.png' },
   '엔드필드': { id:'endfield',  a:'#C86820', b:'#FFF3E8', m:'#D87830', p:'#5A5A64', icon:'icon-endfield.png' },
 };
 const GAME_ORDER = ['원신', '붕스', '명조', '엔드필드'];
@@ -507,40 +507,55 @@ function lev(a, b) {
 function allChars(gameData) {
   const map = {};
   gameData.forEach((v, idx) => {
-    ['fn', 'hn'].forEach(k => {
+    const proc = (k, half) => {
       sp(v[k]).forEach(name => {
         const key = name.replace(/\?/g, '').trim();
         if (!key) return;
-        if (!map[key]) map[key] = { last: {idx, v: v.v, end: v.e}, rerunCount: 0 };
-        else map[key].last = { idx, v: v.v, end: v.e };
+        const isRerun = k === 'fr' || k === 'hr';
+        const info = { idx, v: v.v, s: v.s, e: v.e, half };
+        if (!map[key]) map[key] = { last: info, rerunCount: isRerun ? 1 : 0 };
+        else { map[key].last = info; if (isRerun) map[key].rerunCount++; }
       });
-    });
-    ['fr', 'hr'].forEach(k => {
-      sp(v[k]).forEach(name => {
-        const key = name.replace(/\?/g, '').trim();
-        if (!key) return;
-        if (!map[key]) map[key] = { last: {idx, v: v.v, end: v.e}, rerunCount: 1 };
-        else { map[key].last = {idx, v: v.v, end: v.e}; map[key].rerunCount++; }
-      });
-    });
+    };
+    proc('fn', '전반'); proc('hn', '후반');
+    proc('fr', '전반'); proc('hr', '후반');
   });
   return map;
 }
 
-function calcRerun(gameData, q) {
+function getExpectedRerun(gameData, charKey, lastIdx, gameName) {
+  const minGap = (gameName === '원신' || gameName === '붕스') ? 2 : 1;
+  for (let i = lastIdx + 1; i < gameData.length; i++) {
+    const v = gameData[i];
+    if (getPhase(v).st !== 'future') continue;
+    if ([...sp(v.fr), ...sp(v.hr)].some(n => n === charKey))
+      return { type: 'confirmed', ver: v.v, date: pd(v.s) };
+  }
+  const minIdx = Math.max(lastIdx + minGap, lastIdx + 1);
+  for (let i = minIdx; i < gameData.length; i++) {
+    const v = gameData[i];
+    if (getPhase(v).st === 'future')
+      return { type: 'estimated', ver: v.v, date: pd(v.s) };
+  }
+  return null;
+}
+
+function calcRerun(gameData, q, gameName) {
   q = q.trim();
   if (!q) return { type: 'empty' };
   const chars = allChars(gameData), keys = Object.keys(chars);
   const exact = keys.find(k => k === q);
   if (exact) {
     const info = chars[exact];
-    const lastEnd = pd(info.last.end);
-    const daysSince = lastEnd ? Math.max(0, Math.floor((TODAY - lastEnd) / 86400000)) : 0;
+    const lastS = pd(info.last.s), lastE = pd(info.last.e);
+    const lastBannerEnd = (info.last.half === '전반' && lastS) ? addDays(lastS, 21) : lastE;
+    const daysSince = lastBannerEnd ? Math.max(0, Math.floor((TODAY - lastBannerEnd) / 86400000)) : 0;
     const pastVers = gameData.slice(info.last.idx + 1).filter(v => { const s = pd(v.s); return s && s <= TODAY; }).length;
-    return { type: 'found', name: exact, lastV: info.last.v, lastEnd: info.last.end, daysSince, pastVers, rerunCount: info.rerunCount };
+    const expectedRerun = getExpectedRerun(gameData, exact, info.last.idx, gameName);
+    return { type: 'found', name: exact, lastV: info.last.v, lastE: info.last.e, daysSince, pastVers, rerunCount: info.rerunCount, expectedRerun };
   }
   const partial = keys.filter(k => k.includes(q) || q.includes(k));
-  if (partial.length === 1) return calcRerun(gameData, partial[0]);
+  if (partial.length === 1) return calcRerun(gameData, partial[0], gameName);
   if (partial.length > 1) return { type: 'suggest', q, suggests: partial };
   const close = keys.map(k => ({k, d: lev(q, k)})).sort((a,b) => a.d-b.d).filter(x => x.d <= 2).map(x => x.k);
   if (close.length) return { type: 'typo', q, suggests: close };
@@ -550,15 +565,29 @@ function calcRerun(gameData, q) {
 function renderResult(res, gameName) {
   const c = GAME_CONFIG[gameName];
   if (res.type === 'empty') return `<div class="result-box r-none"><p style="font-size:13px;color:var(--text2);">캐릭터 이름을 입력해주세요.</p></div>`;
-  if (res.type === 'found') return `<div class="result-box r-found" style="--gb:${c.b};--gm:${c.m};">
+  if (res.type === 'found') {
+    const exp = res.expectedRerun;
+    let expBox;
+    if (exp && exp.type === 'confirmed' && exp.date) {
+      const dl = Math.max(0, Math.ceil((exp.date - TODAY) / 86400000));
+      expBox = `<div class="r-stat"><p class="r-num" style="color:${c.a};">${dl === 0 ? '오늘' : 'D-' + dl}</p><p class="r-lbl">${exp.ver}버전 확정</p></div>`;
+    } else if (exp && exp.type === 'estimated' && exp.date) {
+      const dl = Math.max(0, Math.ceil((exp.date - TODAY) / 86400000));
+      expBox = `<div class="r-stat"><p class="r-num" style="color:${c.a};">D-${dl}~</p><p class="r-lbl">${exp.ver}~ 가능</p></div>`;
+    } else {
+      expBox = `<div class="r-stat"><p class="r-num" style="color:var(--text3);">미정</p><p class="r-lbl">예상 복각</p></div>`;
+    }
+    return `<div class="result-box r-found" style="--gb:${c.b};--gm:${c.m};">
     <p class="r-char" style="color:${c.a};">${res.name}</p>
     <div class="r-stats">
       <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.pastVers}</p><p class="r-lbl">버전 경과</p></div>
       <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.daysSince}</p><p class="r-lbl">일째 미복각</p></div>
       <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.rerunCount}</p><p class="r-lbl">복각 횟수</p></div>
+      ${expBox}
     </div>
-    <p class="r-sub">마지막 등장 · ${res.lastV}버전 (${res.lastEnd} 종료)</p>
+    <p class="r-sub">마지막 등장 · ${res.lastV}버전 (${res.lastE} 종료)</p>
   </div>`;
+  }
   if (res.type === 'suggest' || res.type === 'typo') return `<div class="result-box r-error">
     <p style="font-size:13px;color:#633806;">${res.type === 'typo' ? `"${res.q}"와 비슷한 이름을 찾았어요.` : `"${res.q}"로 여러 캐릭터가 검색됐어요.`}</p>
     <div class="sug-list">${res.suggests.map(s => `<button class="sug-btn" onclick="fillC('${s}','${gameName}')">${s}</button>`).join('')}</div>
@@ -726,7 +755,7 @@ window.setSub = (gameName, sub) => { subStates[gameName] = sub; render(); };
 window.rc = gameName => {
   const el = document.getElementById('ci-' + gameName);
   if (!el) return;
-  const res = calcRerun(GAMES[gameName], el.value);
+  const res = calcRerun(GAMES[gameName], el.value, gameName);
   document.getElementById('cr-' + gameName).innerHTML = renderResult(res, gameName);
 };
 window.fillC = (name, gameName) => {
