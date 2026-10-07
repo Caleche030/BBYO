@@ -116,7 +116,7 @@
   .vc-game { font-size: 11px; color: var(--text3); margin-bottom: 4px; letter-spacing: 0.05em; text-transform: uppercase; }
   .vc-ver  { font-size: 22px; font-weight: 600; color: var(--ga); line-height: 1.1; }
   .vc-dates{ font-size: 13px; color: var(--text2); margin-top: 3px; margin-bottom: 16px; }
-  .vc-all-btn { margin-left: auto; align-self: flex-start; padding: 5px 10px; border: 0.5px solid var(--gm); border-radius: 20px; background: var(--gb); color: var(--gp); font-size: 11px; font-weight: 500; font-family: inherit; cursor: pointer; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+  .vc-all-btn { margin-left: auto; align-self: flex-start; padding: 5px 10px; border: 0.5px solid var(--ga); border-radius: 20px; background: var(--gb); color: var(--gp); font-size: 11px; font-weight: 500; font-family: inherit; cursor: pointer; white-space: nowrap; transition: background 0.15s, color 0.15s; }
   .vc-all-btn:hover { background: var(--ga); color: var(--gb); }
   .game-icon-lg { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
   .tab-icon { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; vertical-align: middle; margin-right: 5px; }
@@ -324,7 +324,7 @@
   .sc-date-lbl { font-size: 14px; font-weight: 700; color: #e53e3e; margin-left: auto; }
   .sc-outer  { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); overflow: hidden; }
   .sc-layout { display: flex; }
-  .sc-label-col  { width: 58px; flex-shrink: 0; border-right: 0.5px solid var(--border); }
+  .sc-label-col  { width: 70px; flex-shrink: 0; border-right: 0.5px solid var(--border); }
   .sc-label-cell { height: 44px; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; font-size: 11px; font-weight: 600; border-bottom: 0.5px solid var(--border); }
   .sc-label-ruler { height: 60px; }
   .sc-viewport { flex: 1; position: relative; overflow: hidden; cursor: grab; user-select: none; -webkit-user-select: none; }
@@ -361,16 +361,18 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyz6c92R-LC6sF
 const GAME_CONFIG = {
   '원신':     { id:'genshin',   a:'#0D9488', b:'#F0FDFA', m:'#5EEAD4', p:'#115E59', icon:'icon-genshin.png' },
   '명조':     { id:'wuwa',      a:'#38362A', b:'#F5F3E4', m:'#B0A818', p:'#141208', icon:'icon-wuwa.png' },
-  '붕스':     { id:'starrail',  a:'#1B3A6B', b:'#EEF2FC', m:'#C8A020', p:'#0C1C3D', icon:'icon-starrail.png' },
+  '스타레일': { id:'starrail',  a:'#1B3A6B', b:'#EEF2FC', m:'#C8A020', p:'#0C1C3D', icon:'icon-starrail.png' },
 };
-const GAME_ORDER = ['원신', '붕스', '명조'];
+const GAME_ORDER = ['원신', '스타레일', '명조'];
+// 시트 A열 표기 → 화면 표기
+const SHEET_GAME_ALIAS = { '붕스': '스타레일' };
 
 // 복각 계산 특수 처리 캐릭터
 const SPECIAL_CHARS = {
   '원신': {
     standard: ['타이나리', '유메미즈키 미즈키', '데히야'],
   },
-  '붕스': {
+  '스타레일': {
     pickable: ['은랑', '제레', '블레이드', '아젠티', '운리', '부현'],
   },
 };
@@ -439,7 +441,8 @@ function buildGameData(rows) {
     // 헤더 행 스킵
     if (ver === '버전' || ver === '시작 날짜') return;
     // 게임명 행 (GAME_CONFIG에 없는 게임은 블록 전체 무시)
-    if (g) curGame = GAME_CONFIG[g] ? g : null;
+    const gName = SHEET_GAME_ALIAS[g] || g;
+    if (g) curGame = GAME_CONFIG[gName] ? gName : null;
     if (!curGame) return;
     if (!ver || !s) return;
 
@@ -457,14 +460,14 @@ function buildGameData(rows) {
 }
 
 // ── 캐릭터 초상화 ─────────────────────────────────────
-// portraits.json: tools/build_portraits.py 로 생성 (원신·붕스 gachabase, 명조 nanoka)
+// portraits.json: tools/build_portraits.py 로 생성 (nanoka.cc)
 let PORTRAITS = {};
 function portraitKey(x) {  // build_portraits.py 의 norm() 과 같게 유지
   return x.replace(/\?/g, '').replace(/\((4성|5성|전반|중반|후반)\)/g, '').replace(/[\s ·•.:&]/g, '').toLowerCase();
 }
 function portraitInfo(game, name) { return ((PORTRAITS[game] || {}).chars || {})[portraitKey(name)] || null; }
 function portraitAttr(game, key) { return key ? ((PORTRAITS[game] || {}).attrs || {})[key] || null : null; }
-const PT_WLABEL = { '원신': '무기', '붕스': '운명의 길', '명조': '무기' };
+const PT_WLABEL = { '원신': '무기', '스타레일': '운명의 길', '명조': '무기' };
 function portraitBox(game, name, size) {
   const p = portraitInfo(game, name);
   const st = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.45)}px;border-radius:${size < 30 ? 4 : 8}px;`;
@@ -484,7 +487,7 @@ function ptTipShow(t, x, y) {
   const g = t.dataset.cg, n = t.dataset.ch, key = g + '|' + n;
   if (ptTipEl.dataset.key !== key) {
     const p = portraitInfo(g, n);
-    // 속성 = 우측 상단, 무기(붕스는 운명의 길) = 우측 하단 오버레이. 성급은 배경색으로 구분
+    // 속성 = 우측 상단, 무기(스타레일은 운명의 길) = 우측 하단 오버레이. 성급은 배경색으로 구분
     const attr = (key, pos, lbl) => {
       const a = portraitAttr(g, key);
       return a ? `<span class="pt-attr-ic pt-attr-${pos}" title="${lbl} · ${a.n}"><img src="${a.f}" alt="${a.n}"></span>` : '';
@@ -642,7 +645,7 @@ function allChars(gameData) {
 }
 
 function getExpectedRerun(gameData, charKey, lastIdx, gameName) {
-  const minGap = (gameName === '원신' || gameName === '붕스') ? 2 : 1;
+  const minGap = (gameName === '원신' || gameName === '스타레일') ? 2 : 1;
   // 확정: 미래 버전의 복각 슬롯에 해당 캐릭터가 명시된 경우
   for (let i = lastIdx + 1; i < gameData.length; i++) {
     const v = gameData[i];
@@ -928,11 +931,11 @@ window.fillC = (name, gameName) => {
 // 금액은 USD × 해당 월 평균 환율(fx)로 원화 환산해 보여준다.
 const REV_GAMES = {
   '원신': GAME_CONFIG['원신'],
-  '붕스': GAME_CONFIG['붕스'],
+  '스타레일': GAME_CONFIG['스타레일'],
   '명조': GAME_CONFIG['명조'],
   '트릭컬': { a:'#D9577A', b:'#FDF0F3', m:'#F2B8C6', p:'#7A2E42', icon:'icon-trickcal.png' },
 };
-const REV_ORDER = ['원신', '붕스', '명조', '트릭컬'];
+const REV_ORDER = ['원신', '스타레일', '명조', '트릭컬'];
 let REVENUE = null;
 let revGame = 'all';
 let revPage = 0;   // 0 = 최신 구간, 1 = 그 이전 구간 ...
@@ -1160,7 +1163,7 @@ const GC_CFG = {
     c:{ hard:90, soft:74, base:0.006, incr:0.06, win:0.55, avg:62, capture:true },
     w:{ hard:80, soft:63, base:0.007, incr:0.07, win:0.375, avg:52, fatepoint:true },
     currency:'원석', fateName:'뒤얽힌 인연', gpp:160, truckWon:119000 },
-  starrail: { name:'붕스',    icon:'icon-starrail.png', ready:true,
+  starrail: { name:'스타레일', icon:'icon-starrail.png', ready:true,
     c:{ hard:90, soft:74, base:0.006, incr:0.06, win:0.50, avg:62, capture:false },
     w:{ hard:80, soft:66, base:0.008, incr:0.07, win:0.75, avg:52, fatepoint:false },
     currency:'성옥', fateName:'별의 궤도 티켓', gpp:160, truckWon:119000 },
