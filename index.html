@@ -173,11 +173,8 @@
   .pt-r4 { background: linear-gradient(160deg, #5E4B94 0%, #A283D6 100%); }
   .pt-r0 { background: var(--bg3); color: var(--text3); border: 0.5px dashed var(--border2); }
   .pt-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 6px 2px 2px; border-radius: 4px; }
-  .pt-tip { display: none; position: fixed; z-index: 10000; pointer-events: none; background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 8px 8px 9px; box-shadow: 0 4px 20px rgba(0,0,0,0.13); flex-direction: column; align-items: center; gap: 7px; }
   .pt-tip-img { position: relative; }
   .pt-tip-img .pt-box { border-radius: 10px !important; }
-  .pt-tip-name { font-size: 14px; font-weight: 700; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
-  .pt-tip-sub { font-size: 11px; color: var(--text3); margin-top: -4px; }
   .pt-attr-ic { position: absolute; right: 5px; width: 28px; height: 28px; border-radius: 50%; background: rgba(28,28,32,0.82); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
   .pt-attr-ic img { width: 20px; height: 20px; object-fit: contain; }
   .pt-attr-tr { top: 5px; }
@@ -197,7 +194,6 @@
   .legend-chip .lg-new { box-shadow: 0 0 0 2px #888; }
   .legend-chip .lg-re { width: auto; height: auto; font-size: 9px; font-weight: 700; padding: 1px 4px; background: rgba(28,28,32,0.82); color: #fff; }
   .legend-chip .lg-guess { outline: 1.5px dashed #888; outline-offset: 1px; }
-  .tag-n[data-ch], .tag-r[data-ch] { cursor: default; }
 
   /* ── 글로벌 매출 ── */
   .rev-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -588,47 +584,13 @@ function portraitWithAttrs(g, n, size) {
   return `<div class="pt-tip-img">${portraitBox(g, n, size)}${p ? attr(p.e, 'tr', '속성') + attr(p.w, 'br', PT_WLABEL[g] || '무기') : ''}</div>`;
 }
 
-// 캐릭터 태그 마우스 오버(PC) / 탭(모바일) → 초상화 카드
-let ptTipEl = null;
-function ptTipShow(t, x, y) {
-  if (!ptTipEl) {
-    ptTipEl = document.createElement('div');
-    ptTipEl.className = 'pt-tip';
-    document.body.appendChild(ptTipEl);
-  }
-  const g = t.dataset.cg, n = t.dataset.ch, key = g + '|' + n;
-  if (ptTipEl.dataset.key !== key) {
-    const p = portraitInfo(g, n);
-    ptTipEl.innerHTML = `${portraitWithAttrs(g, n, 128)}
-      <div class="pt-tip-name">${n}</div>
-      ${p ? '' : '<div class="pt-tip-sub">이미지 준비 중</div>'}`;
-    ptTipEl.dataset.key = key;
-  }
-  ptTipEl.style.display = 'flex';
-  const w = ptTipEl.offsetWidth, h = ptTipEl.offsetHeight;
-  let lx = x + 14, ty = y - h - 10;
-  if (lx + w > window.innerWidth - 8) lx = Math.max(8, x - w - 14);
-  if (ty < 4) ty = y + 18;
-  ptTipEl.style.left = lx + 'px';
-  ptTipEl.style.top = ty + 'px';
-}
-function ptTipHide() { if (ptTipEl) { ptTipEl.style.display = 'none'; ptTipEl.dataset.key = ''; } }
-document.addEventListener('mouseover', e => {
-  const t = e.target.closest && e.target.closest('[data-ch]');
-  if (t) ptTipShow(t, e.clientX, e.clientY); else ptTipHide();
-});
-document.addEventListener('click', e => {
-  const t = e.target.closest && e.target.closest('[data-ch]');
-  if (t) ptTipShow(t, e.clientX, e.clientY);
-});
-window.addEventListener('scroll', ptTipHide, { passive: true });
 
 // ── 렌더 헬퍼 ─────────────────────────────────────────
 // 버전 카드·전체 버전 타임라인용 초상화 타일. 신규 = 게임색 테두리, 복각 = '복각' 배지, ? = 추측(점선·흐리게)
 const PT_TILE = () => window.innerWidth < 600 ? 56 : 64;
 function ptTile(n, g, rerun) {
   const guess = n.includes('?');
-  return `<span class="pt-tile${rerun ? ' is-rerun' : ' is-new'}${guess ? ' is-guess' : ''}" data-cg="${g}" data-ch="${n}" title="${n}">
+  return `<span class="pt-tile${rerun ? ' is-rerun' : ' is-new'}${guess ? ' is-guess' : ''}" title="${n}">
     ${portraitWithAttrs(g, n, PT_TILE())}${rerun ? '<span class="pt-tile-badge">복각</span>' : ''}
     <span class="pt-tile-name" style="max-width:${PT_TILE() + 12}px;">${n}</span></span>`;
 }
@@ -939,7 +901,6 @@ function renderMain() {
       <span class="legend-chip"><i class="lg-new"></i>신규 (테두리)</span>
       <span class="legend-chip"><i class="lg-re">복각</i>복각 (배지)</span>
       <span class="legend-chip"><i class="lg-guess"></i>추측 (점선)</span>
-      <span style="font-size:11px;color:var(--text3);">· 초상화에 마우스를 올리면 크게 보여요</span>
     </div>
     <div id="tools" style="margin-top:28px;">${renderTools()}</div>`;
 }
