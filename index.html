@@ -173,9 +173,15 @@
   .pt-r4 { background: linear-gradient(160deg, #5E4B94 0%, #A283D6 100%); }
   .pt-r0 { background: var(--bg3); color: var(--text3); border: 0.5px dashed var(--border2); }
   .pt-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 6px 2px 2px; border-radius: 4px; }
-  .pt-tip { display: none; position: fixed; z-index: 10000; pointer-events: none; background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 10px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.13); min-width: 108px; }
-  .pt-tip-name { font-size: 13px; font-weight: 600; margin-top: 7px; }
-  .pt-tip-sub { font-size: 11px; color: var(--text3); margin-top: 2px; letter-spacing: 1px; }
+  .pt-tip { display: none; position: fixed; z-index: 10000; pointer-events: none; background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.13); gap: 12px; align-items: center; }
+  .pt-tip-body { min-width: 96px; }
+  .pt-tip-name { font-size: 14px; font-weight: 700; white-space: nowrap; }
+  .pt-tip-sub { font-size: 11px; color: var(--text3); margin: 1px 0 6px; letter-spacing: 1px; }
+  .pt-attr { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--text); margin-top: 4px; white-space: nowrap; }
+  .pt-attr-ic { width: 22px; height: 22px; border-radius: 50%; background: #3A3A3F; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .pt-attr-ic img { width: 16px; height: 16px; object-fit: contain; }
+  .pt-attr-lbl { font-size: 10px; color: var(--text3); font-weight: 400; min-width: 34px; }
+  .tag-pt { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px 2px 2px; }
   .tag-n[data-ch], .tag-r[data-ch] { cursor: default; }
 
   /* ── 글로벌 매출 ── */
@@ -455,7 +461,9 @@ let PORTRAITS = {};
 function portraitKey(x) {  // build_portraits.py 의 norm() 과 같게 유지
   return x.replace(/\?/g, '').replace(/\((4성|5성|전반|중반|후반)\)/g, '').replace(/[\s ·•.:&]/g, '').toLowerCase();
 }
-function portraitInfo(game, name) { return (PORTRAITS[game] || {})[portraitKey(name)] || null; }
+function portraitInfo(game, name) { return ((PORTRAITS[game] || {}).chars || {})[portraitKey(name)] || null; }
+function portraitAttr(game, key) { return key ? ((PORTRAITS[game] || {}).attrs || {})[key] || null : null; }
+const PT_WLABEL = { '원신': '무기', '붕스': '운명의 길', '명조': '무기' };
 function portraitBox(game, name, size) {
   const p = portraitInfo(game, name);
   const st = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.45)}px;border-radius:${size < 30 ? 4 : 8}px;`;
@@ -475,12 +483,19 @@ function ptTipShow(t, x, y) {
   const g = t.dataset.cg, n = t.dataset.ch, key = g + '|' + n;
   if (ptTipEl.dataset.key !== key) {
     const p = portraitInfo(g, n);
-    ptTipEl.innerHTML = `${portraitBox(g, n, 88)}
-      <div class="pt-tip-name">${n}</div>
-      <div class="pt-tip-sub">${p ? `<span style="color:${p.r === 5 ? '#C88A2E' : '#8A6BC8'};">${'★'.repeat(p.r)}</span>` : '이미지 준비 중'}</div>`;
+    const attr = (key, lbl) => {
+      const a = portraitAttr(g, key);
+      return a ? `<div class="pt-attr"><span class="pt-attr-ic"><img src="${a.f}" alt=""></span><span class="pt-attr-lbl">${lbl}</span>${a.n}</div>` : '';
+    };
+    ptTipEl.innerHTML = `${portraitBox(g, n, 76)}
+      <div class="pt-tip-body">
+        <div class="pt-tip-name">${n}</div>
+        <div class="pt-tip-sub">${p ? `<span style="color:${p.r === 5 ? '#C88A2E' : '#8A6BC8'};">${'★'.repeat(p.r)}</span>` : '이미지 준비 중'}</div>
+        ${p ? attr(p.e, '속성') + attr(p.w, PT_WLABEL[g] || '무기') : ''}
+      </div>`;
     ptTipEl.dataset.key = key;
   }
-  ptTipEl.style.display = 'block';
+  ptTipEl.style.display = 'flex';
   const w = ptTipEl.offsetWidth, h = ptTipEl.offsetHeight;
   let lx = x + 14, ty = y - h - 10;
   if (lx + w > window.innerWidth - 8) lx = Math.max(8, x - w - 14);
@@ -500,8 +515,8 @@ document.addEventListener('click', e => {
 window.addEventListener('scroll', ptTipHide, { passive: true });
 
 // ── 렌더 헬퍼 ─────────────────────────────────────────
-function nt(arr, g) { return arr.map(n => `<span class="tag-n" data-cg="${g}" data-ch="${n}">${n}</span>`).join(''); }
-function rt(arr, g) { return arr.map(n => `<span class="tag-r" data-cg="${g}" data-ch="${n}">${n}</span>`).join(''); }
+function nt(arr, g) { return arr.map(n => `<span class="tag-n tag-pt" data-cg="${g}" data-ch="${n}">${portraitBox(g, n, 22)}${n}</span>`).join(''); }
+function rt(arr, g) { return arr.map(n => `<span class="tag-r tag-pt" data-cg="${g}" data-ch="${n}">${portraitBox(g, n, 22)}${n}</span>`).join(''); }
 
 function phSection(g, title, isActive, countdown, fnA, frA) {
   const hasChars = fnA.length || frA.length;
