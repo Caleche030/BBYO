@@ -166,6 +166,18 @@
   .tool-panel { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 20px; }
   .tool-games { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 
+  /* ── 캐릭터 초상화 ── */
+  .pt-box { display: inline-flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; vertical-align: middle; font-weight: 700; }
+  .pt-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pt-r5 { background: linear-gradient(160deg, #94612F 0%, #D9A156 100%); }
+  .pt-r4 { background: linear-gradient(160deg, #5E4B94 0%, #A283D6 100%); }
+  .pt-r0 { background: var(--bg3); color: var(--text3); border: 0.5px dashed var(--border2); }
+  .pt-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 6px 2px 2px; border-radius: 4px; }
+  .pt-tip { display: none; position: fixed; z-index: 10000; pointer-events: none; background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 10px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.13); min-width: 108px; }
+  .pt-tip-name { font-size: 13px; font-weight: 600; margin-top: 7px; }
+  .pt-tip-sub { font-size: 11px; color: var(--text3); margin-top: 2px; letter-spacing: 1px; }
+  .tag-n[data-ch], .tag-r[data-ch] { cursor: default; }
+
   /* ── 글로벌 매출 ── */
   .rev-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .rev-table th { font-size: 11px; font-weight: 500; color: var(--text3); text-align: right; padding: 0 8px 8px; border-bottom: 0.5px solid var(--border2); }
@@ -376,7 +388,7 @@ function pd(s) {
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
 function fmt(d) { if (!d) return '?'; return `${d.getMonth()+1}/${String(d.getDate()).padStart(2,'0')}`; }
 function dLeft(d) { return Math.max(0, Math.ceil((d - TODAY) / 86400000)); }
-function sp(s) { return s ? s.split('/').map(n => n.trim()).filter(Boolean) : []; }
+function sp(s) { return s ? s.split(/[\/,]/).map(n => n.trim()).filter(Boolean) : []; }
 
 function getPhase(v) {
   const s = pd(v.s), e = pd(v.e);
@@ -437,18 +449,68 @@ function buildGameData(rows) {
   return games;
 }
 
-// ── 렌더 헬퍼 ─────────────────────────────────────────
-function nt(arr) { return arr.map(n => `<span class="tag-n">${n}</span>`).join(''); }
-function rt(arr) { return arr.map(n => `<span class="tag-r">${n}</span>`).join(''); }
+// ── 캐릭터 초상화 ─────────────────────────────────────
+// portraits.json: tools/build_portraits.py 로 생성 (원신·붕스 gachabase, 명조 nanoka)
+let PORTRAITS = {};
+function portraitKey(x) {  // build_portraits.py 의 norm() 과 같게 유지
+  return x.replace(/\?/g, '').replace(/\((4성|5성|전반|중반|후반)\)/g, '').replace(/[\s ·•.:&]/g, '').toLowerCase();
+}
+function portraitInfo(game, name) { return (PORTRAITS[game] || {})[portraitKey(name)] || null; }
+function portraitBox(game, name, size) {
+  const p = portraitInfo(game, name);
+  const st = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.45)}px;border-radius:${size < 30 ? 4 : 8}px;`;
+  return p
+    ? `<span class="pt-box pt-r${p.r}" style="${st}"><img src="${p.f}" alt="" loading="lazy"></span>`
+    : `<span class="pt-box pt-r0" style="${st}">?</span>`;
+}
 
-function phSection(title, isActive, countdown, fnA, frA) {
+// 캐릭터 태그 마우스 오버(PC) / 탭(모바일) → 초상화 카드
+let ptTipEl = null;
+function ptTipShow(t, x, y) {
+  if (!ptTipEl) {
+    ptTipEl = document.createElement('div');
+    ptTipEl.className = 'pt-tip';
+    document.body.appendChild(ptTipEl);
+  }
+  const g = t.dataset.cg, n = t.dataset.ch, key = g + '|' + n;
+  if (ptTipEl.dataset.key !== key) {
+    const p = portraitInfo(g, n);
+    ptTipEl.innerHTML = `${portraitBox(g, n, 88)}
+      <div class="pt-tip-name">${n}</div>
+      <div class="pt-tip-sub">${p ? `<span style="color:${p.r === 5 ? '#C88A2E' : '#8A6BC8'};">${'★'.repeat(p.r)}</span>` : '이미지 준비 중'}</div>`;
+    ptTipEl.dataset.key = key;
+  }
+  ptTipEl.style.display = 'block';
+  const w = ptTipEl.offsetWidth, h = ptTipEl.offsetHeight;
+  let lx = x + 14, ty = y - h - 10;
+  if (lx + w > window.innerWidth - 8) lx = Math.max(8, x - w - 14);
+  if (ty < 4) ty = y + 18;
+  ptTipEl.style.left = lx + 'px';
+  ptTipEl.style.top = ty + 'px';
+}
+function ptTipHide() { if (ptTipEl) { ptTipEl.style.display = 'none'; ptTipEl.dataset.key = ''; } }
+document.addEventListener('mouseover', e => {
+  const t = e.target.closest && e.target.closest('[data-ch]');
+  if (t) ptTipShow(t, e.clientX, e.clientY); else ptTipHide();
+});
+document.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('[data-ch]');
+  if (t) ptTipShow(t, e.clientX, e.clientY);
+});
+window.addEventListener('scroll', ptTipHide, { passive: true });
+
+// ── 렌더 헬퍼 ─────────────────────────────────────────
+function nt(arr, g) { return arr.map(n => `<span class="tag-n" data-cg="${g}" data-ch="${n}">${n}</span>`).join(''); }
+function rt(arr, g) { return arr.map(n => `<span class="tag-r" data-cg="${g}" data-ch="${n}">${n}</span>`).join(''); }
+
+function phSection(g, title, isActive, countdown, fnA, frA) {
   const hasChars = fnA.length || frA.length;
   return `<div class="ph-section">
     <div class="ph-head">
       <span class="ph-title${isActive ? ' active' : ''}">${title}</span>
       ${countdown ? `<span class="ph-countdown${isActive ? ' active' : ''}">${countdown}</span>` : ''}
     </div>
-    <div class="ph-tags">${hasChars ? (nt(fnA) + rt(frA)) : '<span class="tag-empty">정보 없음</span>'}</div>
+    <div class="ph-tags">${hasChars ? (nt(fnA, g) + rt(frA, g)) : '<span class="tag-empty">정보 없음</span>'}</div>
   </div>`;
 }
 
@@ -468,8 +530,8 @@ function renderVersionCard(gameName, v, showNext, nxt) {
     nxtHtml = `<div class="card-divider"></div>
       <p class="next-lbl">다음 버전</p>
       <p style="margin-bottom:8px;"><span class="next-ver">${nxt.v}버전</span><span class="next-dates">(${fmt(ns)} – ${fmt(ne)})</span></p>
-      ${nhF ? phSection('전반', false, '', nfn, nfr) : ''}
-      ${nhB ? phSection('후반', false, '', nhn, nhr) : ''}`;
+      ${nhF ? phSection(gameName, '전반', false, '', nfn, nfr) : ''}
+      ${nhB ? phSection(gameName, '후반', false, '', nhn, nhr) : ''}`;
   }
 
   return `<div class="vcard" style="--ga:${c.a};--gb:${c.b};--gm:${c.m};--gp:${c.p};">
@@ -479,9 +541,9 @@ function renderVersionCard(gameName, v, showNext, nxt) {
       <button class="vc-all-btn" onclick="sw('${gameName}')">전체 버전 보기</button>
     </div>
     <p class="vc-dates">(${fmt(s)} – ${fmt(e)})</p>
-    ${phSection('전반', info.half === '전반', f1cd, fnA, frA)}
+    ${phSection(gameName, '전반', info.half === '전반', f1cd, fnA, frA)}
     <div class="card-divider"></div>
-    ${phSection('후반', info.half === '후반', f2cd, hnA, hrA)}
+    ${phSection(gameName, '후반', info.half === '후반', f2cd, hnA, hrA)}
     ${v.memo ? `<div style="margin-top:10px;"><span class="tag-memo">${v.memo}</span></div>` : ''}
     ${nxtHtml}
   </div>`;
@@ -507,12 +569,12 @@ function tlCard(v, gameName) {
     ch = `<div style="margin-top:8px;">
       <p class="tl-ph-title${isCur && info.half === '전반' ? ' active' : ' dim'}">전반</p>
       <div class="ph-tags" style="margin-bottom:2px;">
-        ${fnA.length || frA.length ? (nt(fnA) + rt(frA)) : '<span class="tag-empty">-</span>'}
+        ${fnA.length || frA.length ? (nt(fnA, gameName) + rt(frA, gameName)) : '<span class="tag-empty">-</span>'}
         ${f1cd ? `<span style="font-size:12px;color:${c.a};margin-left:4px;">${f1cd}</span>` : ''}
       </div>
       <p class="tl-ph-title${isCur && info.half === '후반' ? ' active' : ' dim'}" style="margin-top:8px;">후반</p>
       <div class="ph-tags">
-        ${hnA.length || hrA.length ? (nt(hnA) + rt(hrA)) : '<span class="tag-empty">-</span>'}
+        ${hnA.length || hrA.length ? (nt(hnA, gameName) + rt(hrA, gameName)) : '<span class="tag-empty">-</span>'}
         ${f2cd ? `<span style="font-size:12px;color:${c.a};margin-left:4px;">${f2cd}</span>` : ''}
       </div>
     </div>`;
@@ -622,7 +684,7 @@ function renderResult(res, gameName) {
       ? '상시 배너로 편입되어 개별 복각 배너가 진행되지 않습니다.'
       : '픽뚫(선택) 배너로 이동되어 개별 복각 배너가 진행되지 않습니다.';
     return `<div class="result-box r-found" style="--gb:${c.b};--gm:${c.m};">
-    <p class="r-char" style="color:${c.a};">${res.name}</p>
+    <p class="r-char" style="color:${c.a};display:flex;align-items:center;gap:10px;">${portraitBox(gameName, res.name, 44)}${res.name}</p>
     <div class="r-retire-row">
       <span class="r-retire-badge" style="background:${c.m};color:${c.p};">${badgeText}</span>
       <span class="r-retire-note">${noteText}</span>
@@ -642,7 +704,7 @@ function renderResult(res, gameName) {
       expBox = `<div class="r-stat"><p class="r-num" style="color:var(--text3);">미정</p><p class="r-lbl">예상 복각</p></div>`;
     }
     return `<div class="result-box r-found" style="--gb:${c.b};--gm:${c.m};">
-    <p class="r-char" style="color:${c.a};">${res.name}</p>
+    <p class="r-char" style="color:${c.a};display:flex;align-items:center;gap:10px;">${portraitBox(gameName, res.name, 44)}${res.name}</p>
     <div class="r-stats">
       <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.pastVers}</p><p class="r-lbl">버전 경과</p></div>
       <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.daysSince}</p><p class="r-lbl">일째 미복각</p></div>
@@ -943,8 +1005,8 @@ function revTipHTML(game, m) {
       picks.map((p, i) => {
         const isTop = i === top, pct = Math.round(p.days / dim * 100);
         const rerunOnly = !p.n.length && p.r.length;
-        const tags = p.n.map(x => `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${isTop ? 'var(--bg)' : c.b};color:${c.p};font-weight:600;">${x}</span>`).join('') +
-          p.r.map(x => `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--text2);">${x}</span>`).join('');
+        const tags = p.n.map(x => `<span class="pt-chip" style="background:${isTop ? 'var(--bg)' : c.b};color:${c.p};font-weight:600;">${portraitBox(game, x, 18)}${x}</span>`).join('') +
+          p.r.map(x => `<span class="pt-chip" style="background:var(--bg3);color:var(--text2);">${portraitBox(game, x, 18)}${x}</span>`).join('');
         const badge = (txt, bg, fg) => `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:${bg};color:${fg};white-space:nowrap;">${txt}</span>`;
         return `<div style="margin-bottom:6px;padding:${isTop ? '7px 8px' : '2px 8px'};border-radius:6px;${isTop ? `background:${c.b};border-left:3px solid ${c.a};` : 'border-left:3px solid transparent;opacity:0.55;'}">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px;">
@@ -1579,8 +1641,8 @@ function initScrubTooltip() {
     if (!v) return;
     const c = GAME_CONFIG[name];
     const fnA = sp(v.fn), frA = sp(v.fr), hnA = sp(v.hn), hrA = sp(v.hr);
-    const tagN = arr => arr.map(n => `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${c.b};color:${c.p};font-weight:500;">${n}</span>`).join('');
-    const tagR = arr => arr.map(n => `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--text2);">${n}</span>`).join('');
+    const tagN = arr => arr.map(n => `<span class="pt-chip" style="background:${c.b};color:${c.p};font-weight:500;">${portraitBox(name, n, 18)}${n}</span>`).join('');
+    const tagR = arr => arr.map(n => `<span class="pt-chip" style="background:var(--bg3);color:var(--text2);">${portraitBox(name, n, 18)}${n}</span>`).join('');
     const half = (na, ra) => (na.length || ra.length) ? tagN(na) + tagR(ra) : `<span style="font-size:10px;color:var(--text3);">정보 없음</span>`;
     tip.innerHTML = `
       <div style="font-size:10px;color:${c.a};font-weight:700;margin-bottom:3px;">${name} ${v.v}버전</div>
@@ -1644,6 +1706,7 @@ async function fetchData() {
     const [res] = await Promise.all([
       fetch(CSV_URL),
       fetch('revenue.json').then(r => r.ok ? r.json() : null).then(j => { REVENUE = j; }).catch(() => {}),
+      fetch('portraits.json').then(r => r.ok ? r.json() : null).then(j => { PORTRAITS = j || {}; }).catch(() => {}),
     ]);
     if (!res.ok) throw new Error('fetch failed');
     const text = await res.text();
