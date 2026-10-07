@@ -587,15 +587,16 @@ function portraitWithAttrs(g, n, size) {
 
 // ── 렌더 헬퍼 ─────────────────────────────────────────
 // 버전 카드·전체 버전 타임라인용 초상화 타일. 신규 = 게임색 테두리, 복각 = '복각' 배지, ? = 추측(점선·흐리게)
-const PT_TILE = () => window.innerWidth < 600 ? 56 : 64;
-function ptTile(n, g, rerun) {
+// 크기: 메인 카드 88px(한 줄 3개), 전체 버전 타임라인 PC 128px(한 줄 7개) / 모바일 80px(한 줄 3개)
+const PT_MAIN = 88, PT_TL = () => window.innerWidth < 600 ? 80 : 128;
+function ptTile(n, g, rerun, size) {
   const guess = n.includes('?');
   return `<span class="pt-tile${rerun ? ' is-rerun' : ' is-new'}${guess ? ' is-guess' : ''}" title="${n}">
-    ${portraitWithAttrs(g, n, PT_TILE())}${rerun ? '<span class="pt-tile-badge">복각</span>' : ''}
-    <span class="pt-tile-name" style="max-width:${PT_TILE() + 12}px;">${n}</span></span>`;
+    ${portraitWithAttrs(g, n, size)}${rerun ? '<span class="pt-tile-badge">복각</span>' : ''}
+    <span class="pt-tile-name" style="max-width:${size}px;">${n}</span></span>`;
 }
-function nt(arr, g) { return arr.map(n => ptTile(n, g, false)).join(''); }
-function rt(arr, g) { return arr.map(n => ptTile(n, g, true)).join(''); }
+function nt(arr, g, size = PT_MAIN) { return arr.map(n => ptTile(n, g, false, size)).join(''); }
+function rt(arr, g, size = PT_MAIN) { return arr.map(n => ptTile(n, g, true, size)).join(''); }
 
 function phSection(g, title, isActive, countdown, fnA, frA) {
   const hasChars = fnA.length || frA.length;
@@ -663,12 +664,12 @@ function tlCard(v, gameName) {
     ch = `<div style="margin-top:8px;">
       <p class="tl-ph-title${isCur && info.half === '전반' ? ' active' : ' dim'}">전반</p>
       <div class="ph-tags" style="margin-bottom:2px;">
-        ${fnA.length || frA.length ? (nt(fnA, gameName) + rt(frA, gameName)) : '<span class="tag-empty">-</span>'}
+        ${fnA.length || frA.length ? (nt(fnA, gameName, PT_TL()) + rt(frA, gameName, PT_TL())) : '<span class="tag-empty">-</span>'}
         ${f1cd ? `<span style="font-size:12px;color:${c.a};margin-left:4px;">${f1cd}</span>` : ''}
       </div>
       <p class="tl-ph-title${isCur && info.half === '후반' ? ' active' : ' dim'}" style="margin-top:8px;">후반</p>
       <div class="ph-tags">
-        ${hnA.length || hrA.length ? (nt(hnA, gameName) + rt(hrA, gameName)) : '<span class="tag-empty">-</span>'}
+        ${hnA.length || hrA.length ? (nt(hnA, gameName, PT_TL()) + rt(hrA, gameName, PT_TL())) : '<span class="tag-empty">-</span>'}
         ${f2cd ? `<span style="font-size:12px;color:${c.a};margin-left:4px;">${f2cd}</span>` : ''}
       </div>
     </div>`;
