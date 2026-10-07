@@ -183,6 +183,20 @@
   .pt-attr-tr { top: 5px; }
   .pt-attr-br { bottom: 5px; }
   .tag-pt { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px 2px 2px; }
+  .ph-tags { gap: 10px 8px !important; }
+  .pt-tile { position: relative; display: inline-flex; flex-direction: column; align-items: center; gap: 4px; cursor: default; vertical-align: top; }
+  .pt-tile .pt-tip-img { border-radius: 9px; }
+  .pt-tile.is-new .pt-tip-img { box-shadow: 0 0 0 2px var(--ga, #888); }
+  .pt-tile.is-rerun .pt-tip-img { box-shadow: 0 0 0 1px var(--border2); }
+  .pt-tile.is-guess .pt-tip-img { box-shadow: none; outline: 1.5px dashed var(--ga, #888); outline-offset: 1px; opacity: 0.7; }
+  .pt-tile-badge { position: absolute; left: 3px; top: 3px; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(28,28,32,0.82); color: #fff; }
+  .pt-tile-name { font-size: 11px; font-weight: 600; color: var(--text); text-align: center; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pt-tile.is-rerun .pt-tile-name { color: var(--text2); font-weight: 500; }
+  .legend-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .legend-chip i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: var(--bg3); font-style: normal; }
+  .legend-chip .lg-new { box-shadow: 0 0 0 2px #888; }
+  .legend-chip .lg-re { width: auto; height: auto; font-size: 9px; font-weight: 700; padding: 1px 4px; background: rgba(28,28,32,0.82); color: #fff; }
+  .legend-chip .lg-guess { outline: 1.5px dashed #888; outline-offset: 1px; }
   .tag-n[data-ch], .tag-r[data-ch] { cursor: default; }
 
   /* ── 글로벌 매출 ── */
@@ -564,9 +578,12 @@ function portraitBox(game, name, size) {
 // 초상화 + 오버레이(속성 = 우측 상단, 무기·운명의 길 = 우측 하단). 성급은 배경색으로 구분
 function portraitWithAttrs(g, n, size) {
   const p = portraitInfo(g, n);
+  const d = size >= 100 ? 28 : Math.max(18, Math.round(size * 0.3)), inset = size >= 100 ? 5 : 3;
+  const st = size >= 100 ? '' : ` style="width:${d}px;height:${d}px;right:${inset}px;${'{pos}'}:${inset}px;"`;
   const attr = (key, pos, lbl) => {
     const a = portraitAttr(g, key);
-    return a ? `<span class="pt-attr-ic pt-attr-${pos}" title="${lbl} · ${a.n}"><img src="${a.f}" alt="${a.n}"></span>` : '';
+    const sty = st.replace('{pos}', pos === 'tr' ? 'top' : 'bottom');
+    return a ? `<span class="pt-attr-ic pt-attr-${pos}"${sty} title="${lbl} · ${a.n}"><img src="${a.f}" alt="${a.n}"${size >= 100 ? '' : ` style="width:${Math.round(d * 0.72)}px;height:${Math.round(d * 0.72)}px;"`}></span>` : '';
   };
   return `<div class="pt-tip-img">${portraitBox(g, n, size)}${p ? attr(p.e, 'tr', '속성') + attr(p.w, 'br', PT_WLABEL[g] || '무기') : ''}</div>`;
 }
@@ -607,8 +624,16 @@ document.addEventListener('click', e => {
 window.addEventListener('scroll', ptTipHide, { passive: true });
 
 // ── 렌더 헬퍼 ─────────────────────────────────────────
-function nt(arr, g) { return arr.map(n => `<span class="tag-n tag-pt" data-cg="${g}" data-ch="${n}">${portraitBox(g, n, 22)}${n}</span>`).join(''); }
-function rt(arr, g) { return arr.map(n => `<span class="tag-r tag-pt" data-cg="${g}" data-ch="${n}">${portraitBox(g, n, 22)}${n}</span>`).join(''); }
+// 버전 카드·전체 버전 타임라인용 초상화 타일. 신규 = 게임색 테두리, 복각 = '복각' 배지, ? = 추측(점선·흐리게)
+const PT_TILE = () => window.innerWidth < 600 ? 56 : 64;
+function ptTile(n, g, rerun) {
+  const guess = n.includes('?');
+  return `<span class="pt-tile${rerun ? ' is-rerun' : ' is-new'}${guess ? ' is-guess' : ''}" data-cg="${g}" data-ch="${n}" title="${n}">
+    ${portraitWithAttrs(g, n, PT_TILE())}${rerun ? '<span class="pt-tile-badge">복각</span>' : ''}
+    <span class="pt-tile-name" style="max-width:${PT_TILE() + 12}px;">${n}</span></span>`;
+}
+function nt(arr, g) { return arr.map(n => ptTile(n, g, false)).join(''); }
+function rt(arr, g) { return arr.map(n => ptTile(n, g, true)).join(''); }
 
 function phSection(g, title, isActive, countdown, fnA, frA) {
   const hasChars = fnA.length || frA.length;
@@ -910,9 +935,11 @@ function renderMain() {
     <p class="section-label">오늘(${dateStr}) 기준 진행 중인 버전</p>
     <div class="main-grid">${cards}</div>
     <div class="legend">
-      <span style="font-size:11px;color:var(--text3);">색상 구분 —</span>
-      <span class="tag-n" style="--gb:#e8e8e8;--gp:#444;">신규</span>
-      <span class="tag-r">복각</span>
+      <span style="font-size:11px;color:var(--text3);">구분 —</span>
+      <span class="legend-chip"><i class="lg-new"></i>신규 (테두리)</span>
+      <span class="legend-chip"><i class="lg-re">복각</i>복각 (배지)</span>
+      <span class="legend-chip"><i class="lg-guess"></i>추측 (점선)</span>
+      <span style="font-size:11px;color:var(--text3);">· 초상화에 마우스를 올리면 크게 보여요</span>
     </div>
     <div id="tools" style="margin-top:28px;">${renderTools()}</div>`;
 }
