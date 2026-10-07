@@ -116,6 +116,8 @@
   .vc-game { font-size: 11px; color: var(--text3); margin-bottom: 4px; letter-spacing: 0.05em; text-transform: uppercase; }
   .vc-ver  { font-size: 22px; font-weight: 600; color: var(--ga); line-height: 1.1; }
   .vc-dates{ font-size: 13px; color: var(--text2); margin-top: 3px; margin-bottom: 16px; }
+  .vc-all-btn { margin-left: auto; align-self: flex-start; padding: 5px 10px; border: 0.5px solid var(--gm); border-radius: 20px; background: var(--gb); color: var(--gp); font-size: 11px; font-weight: 500; font-family: inherit; cursor: pointer; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+  .vc-all-btn:hover { background: var(--ga); color: var(--gb); }
   .game-icon-lg { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
   .tab-icon { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; vertical-align: middle; margin-right: 5px; }
 
@@ -138,37 +140,52 @@
   .next-ver { font-size: 13px; font-weight: 600; color: var(--text); }
   .next-dates { font-size: 12px; color: var(--text2); margin-left: 5px; }
 
-  /* ── 서브탭 ── */
-  .sub-tabs {
+  /* ── 도구 탭 ── */
+  .tool-tabs {
     display: flex;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     border: 0.5px solid var(--border2);
     border-radius: var(--radius);
-    overflow: hidden;
+    overflow-x: auto;
     width: fit-content;
+    max-width: 100%;
     background: var(--bg3);
   }
-  .sub-btn {
-    padding: 8px 22px;
+  .tool-tab {
+    padding: 9px 20px;
     background: none;
     border: none;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text2);
     cursor: pointer;
     font-family: inherit;
+    white-space: nowrap;
     transition: background 0.15s, color 0.15s;
   }
-  .sub-btn.on { font-weight: 500; border-radius: calc(var(--radius) - 1px); }
+  .tool-tab.on { background: var(--text); color: var(--bg); font-weight: 600; border-radius: calc(var(--radius) - 1px); }
+  .tool-panel { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 20px; }
+  .tool-games { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+
+  /* ── 글로벌 매출 ── */
+  .rev-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .rev-table th { font-size: 11px; font-weight: 500; color: var(--text3); text-align: right; padding: 0 8px 8px; border-bottom: 0.5px solid var(--border2); }
+  .rev-table th:first-child, .rev-table td:first-child { text-align: left; padding-left: 0; }
+  .rev-table td { text-align: right; padding: 10px 8px; border-bottom: 0.5px solid var(--border); white-space: nowrap; }
+  .rev-table tbody tr { cursor: pointer; }
+  .rev-table tbody tr:hover { background: var(--bg2); }
+  .rev-legend { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
+  .rev-legend i { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+  .rev-chart-scroll { overflow-x: auto; }
+  .rev-svg { width: 100%; min-width: 560px; display: block; }
+  .rev-bars { display: flex; align-items: flex-end; gap: 4px; height: 180px; }
+  .rev-col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+  .rev-bar { width: 100%; max-width: 36px; border-radius: 4px 4px 0 0; }
+  .rev-val { font-size: 10px; color: var(--text2); margin-bottom: 3px; }
+  .rev-mon { font-size: 10px; color: var(--text3); margin-top: 5px; white-space: nowrap; }
+  .rev-note { font-size: 11px; color: var(--text3); margin-top: 16px; }
+  .rev-note a { color: inherit; }
 
   /* ── 복각 계산기 ── */
-  .calc-box {
-    background: var(--bg);
-    border: 0.5px solid var(--border2);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    margin-top: 14px;
-  }
-  .calc-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
   .calc-desc  { font-size: 12px; color: var(--text2); margin-bottom: 14px; }
   .calc-row   { display: flex; gap: 8px; }
   .calc-input {
@@ -254,6 +271,8 @@
     main { padding: 20px 16px; }
     header { padding: 0 16px; }
     .site-title { display: none; }
+    .tool-tab { padding: 8px 12px; font-size: 13px; }
+    .tool-panel { padding: 16px; }
   }
 
   /* ── 가챠 계산기 ── */
@@ -315,9 +334,8 @@ const GAME_CONFIG = {
   '원신':     { id:'genshin',   a:'#0D9488', b:'#F0FDFA', m:'#5EEAD4', p:'#115E59', icon:'icon-genshin.png' },
   '명조':     { id:'wuwa',      a:'#38362A', b:'#F5F3E4', m:'#B0A818', p:'#141208', icon:'icon-wuwa.png' },
   '붕스':     { id:'starrail',  a:'#1B3A6B', b:'#EEF2FC', m:'#C8A020', p:'#0C1C3D', icon:'icon-starrail.png' },
-  '엔드필드': { id:'endfield',  a:'#C86820', b:'#FFF3E8', m:'#D87830', p:'#5A5A64', icon:'icon-endfield.png' },
 };
-const GAME_ORDER = ['원신', '붕스', '명조', '엔드필드'];
+const GAME_ORDER = ['원신', '붕스', '명조'];
 
 // 복각 계산 특수 처리 캐릭터
 const SPECIAL_CHARS = {
@@ -334,7 +352,6 @@ const REGION_MAP = {
   genshin:  { '1':'몬드 & 리월', '2':'이나즈마', '3':'수메르', '4':'폰타인', '5':'나타', '6':'노드크라이', '7':'스네즈나야' },
   starrail: { '1':'우주 정거장 · 야릴로Ⅵ · 선주 나부', '2':'페나코니 · 선주 나부', '3':'엠포리어스 · 페나코니', '4':'이상 낙원' },
   wuwa:     { '1':'금주', '2':'리나시타', '3':'라하이로이', '3.6':'몽주' },
-  endfield: { '1':'4번협곡 · 무릉성' },
 };
 
 // ── 유틸 ──────────────────────────────────────────────
@@ -394,8 +411,8 @@ function buildGameData(rows) {
     const [g, ver, s, e, fn, fr, hn, hr, memo] = row;
     // 헤더 행 스킵
     if (ver === '버전' || ver === '시작 날짜') return;
-    // 게임명 행
-    if (g && GAME_CONFIG[g]) { curGame = g; }
+    // 게임명 행 (GAME_CONFIG에 없는 게임은 블록 전체 무시)
+    if (g) curGame = GAME_CONFIG[g] ? g : null;
     if (!curGame) return;
     if (!ver || !s) return;
 
@@ -451,6 +468,7 @@ function renderVersionCard(gameName, v, showNext, nxt) {
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
       ${c.icon ? `<img src="${c.icon}" class="game-icon-lg" onerror="this.style.display='none'">` : ''}
       <div><p class="vc-game">${gameName}</p><p class="vc-ver">${v.v}버전</p></div>
+      <button class="vc-all-btn" onclick="sw('${gameName}')">전체 버전 보기</button>
     </div>
     <p class="vc-dates">(${fmt(s)} – ${fmt(e)})</p>
     ${phSection('전반', info.half === '전반', f1cd, fnA, frA)}
@@ -639,7 +657,6 @@ function renderResult(res, gameName) {
 // ── 페이지 렌더 ───────────────────────────────────────
 let GAMES = {};
 let curTab = 'main';
-const subStates = {};
 
 function renderMain() {
   if (!scPageStart) {
@@ -684,27 +701,54 @@ function renderMain() {
       <span class="tag-n" style="--gb:#e8e8e8;--gp:#444;">신규</span>
       <span class="tag-r">복각</span>
     </div>
-    ${renderGachaCalc()}`;
+    <div id="tools" style="margin-top:28px;">${renderTools()}</div>`;
 }
 
-function renderCurrentPage(gameName) {
-  const vs = GAMES[gameName];
-  const c = GAME_CONFIG[gameName];
-  let cur = null, ci = -1;
-  vs.forEach((v, i) => { if (getPhase(v).st === 'current') { cur = v; ci = i; } });
+// ── 도구 (매출 / 복각 / 가챠) ─────────────────────────
+const TOOLS = [['revenue', '글로벌 매출 현황'], ['rerun', '복각 계산기'], ['gacha', '가챠 기댓값 계산기']];
+let toolTab = 'revenue';
+let rerunGame = '원신';
 
-  return `<div>
-    ${cur ? renderVersionCard(gameName, cur, true, vs[ci+1]) : `<div class="error-box">현재 진행 중인 버전이 없습니다.</div>`}
-    <div class="calc-box" style="--ga:${c.a};--gb:${c.b};--gm:${c.m};--gp:${c.p};">
-      <p class="calc-title">복각 계산기</p>
+function toolGameBtn(on, color, icon, label, onclick, extra = '') {
+  return `<button class="gc-game-btn${on ? ' on' : ''}" onclick="${onclick}" ${extra}
+    style="${on ? `border-color:${color};color:${color};background:var(--bg);font-weight:500;` : ''}">
+    <img src="${icon}" onerror="this.style.display='none'">${label}
+  </button>`;
+}
+
+function renderTools() {
+  const tabs = TOOLS.map(([id, lbl]) =>
+    `<button class="tool-tab${id === toolTab ? ' on' : ''}" onclick="setTool('${id}')">${lbl}</button>`).join('');
+  let body;
+  if (toolTab === 'revenue') body = renderRevenue();
+  else if (toolTab === 'rerun') {
+    const btns = GAME_ORDER.filter(n => GAMES[n]).map(n =>
+      toolGameBtn(n === rerunGame, GAME_CONFIG[n].a, GAME_CONFIG[n].icon, n, `setRerunGame('${n}')`)).join('');
+    body = `<div class="tool-panel"><div class="tool-games">${btns}</div>${renderRerunCalc(rerunGame)}</div>`;
+  } else body = renderGachaCalc();
+  return `<div class="tool-tabs">${tabs}</div>${body}`;
+}
+
+function refreshTools() {
+  const el = document.getElementById('tools');
+  if (!el) return;
+  el.innerHTML = renderTools();
+  if (toolTab === 'gacha') gcInitForm();
+}
+
+window.setTool = id => { toolTab = id; refreshTools(); };
+window.setRerunGame = name => { rerunGame = name; refreshTools(); };
+
+function renderRerunCalc(gameName) {
+  const c = GAME_CONFIG[gameName];
+  return `<div style="--ga:${c.a};--gb:${c.b};--gm:${c.m};--gp:${c.p};">
       <p class="calc-desc">캐릭터 이름을 입력하면 마지막 등장 이후 경과 버전 · 일수 · 복각 횟수를 알려드려요.</p>
       <div class="calc-row">
-        <input class="calc-input" id="ci-${gameName}" placeholder="캐릭터 이름..." onkeydown="if(event.key==='Enter')rc('${gameName}')">
+        <input class="calc-input" id="ci-${gameName}" placeholder="${gameName} 캐릭터 이름..." onkeydown="if(event.key==='Enter')rc('${gameName}')">
         <button class="calc-btn" onclick="rc('${gameName}')" style="background:${c.a};color:${c.b};">확인</button>
       </div>
       <div id="cr-${gameName}"></div>
-    </div>
-  </div>`;
+    </div>`;
 }
 
 function getRegionInfo(regionMap, vStr) {
@@ -742,7 +786,7 @@ function renderTimelinePage(gameName) {
   return `<div>
     <div class="tl-header">
       <div class="tl-accent-bar" style="background:${c.a};"></div>
-      <span class="tl-game-title">${gameName} 전체 일정</span>
+      <span class="tl-game-title">${gameName} 전체 버전</span>
       <span class="tl-sort-lbl">최신순</span>
     </div>
     <div class="timeline">
@@ -753,18 +797,7 @@ function renderTimelinePage(gameName) {
 }
 
 function renderGamePage(gameName) {
-  const c = GAME_CONFIG[gameName];
-  if (!subStates[gameName]) subStates[gameName] = 'current';
-  const sub = subStates[gameName];
-  return `<div>
-    <div class="sub-tabs" style="background:var(--bg3);">
-      <button class="sub-btn${sub === 'current' ? ' on' : ''}" onclick="setSub('${gameName}','current')"
-        style="${sub === 'current' ? `background:${c.a};color:${c.b};` : ''}">현재 버전</button>
-      <button class="sub-btn${sub === 'timeline' ? ' on' : ''}" onclick="setSub('${gameName}','timeline')"
-        style="${sub === 'timeline' ? `background:${c.a};color:${c.b};` : ''}">전체 일정</button>
-    </div>
-    ${sub === 'current' ? renderCurrentPage(gameName) : renderTimelinePage(gameName)}
-  </div>`;
+  return renderTimelinePage(gameName);
 }
 
 function render() {
@@ -784,15 +817,19 @@ function render() {
   if (curTab === 'main') {
     mainEl.innerHTML = renderMain();
     initScrubAfterRender();
-    requestAnimationFrame(gcInitForm);
+    requestAnimationFrame(refreshTools);
   } else if (GAMES[curTab]) {
     mainEl.innerHTML = renderGamePage(curTab);
   }
 }
 
 // ── 이벤트 ────────────────────────────────────────────
-window.sw = id => { curTab = id; render(); window.scrollTo(0, 0); };
-window.setSub = (gameName, sub) => { subStates[gameName] = sub; render(); };
+window.sw = id => {
+  curTab = id; render(); window.scrollTo(0, 0);
+  // 게임 페이지는 진행 중인 버전 위치로 이동
+  const cur = curTab !== 'main' && document.querySelector('.tl-current');
+  if (cur) cur.scrollIntoView({ block: 'center' });
+};
 window.rc = gameName => {
   const el = document.getElementById('ci-' + gameName);
   if (!el) return;
@@ -803,6 +840,108 @@ window.fillC = (name, gameName) => {
   const el = document.getElementById('ci-' + gameName);
   if (el) { el.value = name; window.rc(gameName); }
 };
+
+// ── 글로벌 매출 현황 ──────────────────────────────────
+// 데이터: revenue.json (revenue.ennead.cc 월별 수치를 수동 갱신)
+const REV_GAMES = {
+  '원신': GAME_CONFIG['원신'],
+  '붕스': GAME_CONFIG['붕스'],
+  '명조': GAME_CONFIG['명조'],
+  '트릭컬': { a:'#D9577A', b:'#FDF0F3', m:'#F2B8C6', p:'#7A2E42', icon:'icon-trickcal.png' },
+};
+const REV_ORDER = ['원신', '붕스', '명조', '트릭컬'];
+let REVENUE = null;
+let revGame = 'all';
+
+function fmtM(n) { return (n / 1e6).toFixed(1); }
+function fmtUSD(n) { return `$${fmtM(n)}M`; }
+function mLabel(m, withYear) { const [y, mo] = m.split('-'); return withYear ? `${y.slice(2)}.${+mo}월` : `${+mo}월`; }
+function chgTag(cur, prev) {
+  if (!prev) return '<span style="color:var(--text3);">-</span>';
+  const p = (cur - prev) / prev * 100, up = p >= 0;
+  return `<span style="color:${up ? '#3B6D11' : '#A32D2D'};">${up ? '▲' : '▼'} ${Math.abs(p).toFixed(1)}%</span>`;
+}
+function revMonths() {
+  const set = new Set();
+  REV_ORDER.forEach(g => Object.keys(REVENUE.games[g] || {}).forEach(m => set.add(m)));
+  return [...set].sort().slice(-12);
+}
+
+function renderRevenue() {
+  const btns = [
+    `<button class="gc-game-btn${revGame === 'all' ? ' on' : ''}" onclick="setRevGame('all')"
+      style="${revGame === 'all' ? 'border-color:var(--text);color:var(--text);background:var(--bg);font-weight:500;' : ''}">전체 비교</button>`,
+    ...REV_ORDER.map(n => toolGameBtn(n === revGame, REV_GAMES[n].a, REV_GAMES[n].icon, n, `setRevGame('${n}')`))
+  ].join('');
+  let body;
+  if (!REVENUE) body = `<div style="text-align:center;padding:20px 0;color:var(--text2);font-size:13px;">매출 데이터를 불러오지 못했어요.</div>`;
+  else body = revGame === 'all' ? renderRevCompare() : renderRevGame(revGame);
+  const note = REVENUE ? `<p class="rev-note">SensorTower 추정치 · 모바일 전 지역 합산 · ${REVENUE.updated} 갱신 · 출처 <a href="https://revenue.ennead.cc/revenue" target="_blank" rel="noopener">revenue.ennead.cc</a></p>` : '';
+  return `<div class="tool-panel"><div class="tool-games">${btns}</div>${body}${note}</div>`;
+}
+
+function renderRevCompare() {
+  const months = revMonths(), last = months[months.length - 1], prev = months[months.length - 2];
+  const rows = REV_ORDER.map(n => {
+    const d = REVENUE.games[n] || {};
+    return { n, cur: d[last] || 0, prev: d[prev] || 0, sum: months.reduce((t, m) => t + (d[m] || 0), 0) };
+  }).sort((a, b) => b.cur - a.cur);
+  const table = `<table class="rev-table">
+    <thead><tr><th>게임</th><th>${mLabel(last, true)}</th><th>전월 대비</th><th>12개월 합계</th></tr></thead>
+    <tbody>${rows.map(r => {
+      const c = REV_GAMES[r.n];
+      return `<tr onclick="setRevGame('${r.n}')">
+        <td><img src="${c.icon}" class="tab-icon" onerror="this.style.display='none'"><span style="color:${c.a};font-weight:600;">${r.n}</span></td>
+        <td style="font-weight:600;">${fmtUSD(r.cur)}</td><td>${chgTag(r.cur, r.prev)}</td><td>${fmtUSD(r.sum)}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+
+  // 꺾은선 차트 (SVG)
+  const W = window.innerWidth < 640 ? 600 : 900, H = 240, L = 40, R = 12, T = 12, B = 26;
+  const max = Math.max(...REV_ORDER.flatMap(n => months.map(m => (REVENUE.games[n] || {})[m] || 0)));
+  const step = max > 60e6 ? 20e6 : 10e6, top = Math.ceil(max / step) * step;
+  const x = i => L + (W - L - R) * (months.length === 1 ? 0.5 : i / (months.length - 1));
+  const y = v => T + (H - T - B) * (1 - v / top);
+  let grid = '';
+  for (let v = 0; v <= top; v += step)
+    grid += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--border)"/>
+      <text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--text3)">${v / 1e6}M</text>`;
+  const xl = months.map((m, i) => `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text3)">${mLabel(m, i === 0 || m.endsWith('-01'))}</text>`).join('');
+  const lines = REV_ORDER.map(n => {
+    const c = REV_GAMES[n], d = REVENUE.games[n] || {};
+    const pts = months.map((m, i) => d[m] != null ? [x(i), y(d[m]), m, d[m]] : null).filter(Boolean);
+    return `<polyline fill="none" stroke="${c.a}" stroke-width="2.5" stroke-linejoin="round" points="${pts.map(p => `${p[0]},${p[1]}`).join(' ')}"/>
+      ${pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${c.a}"><title>${n} ${mLabel(p[2], true)} ${fmtUSD(p[3])}</title></circle>`).join('')}`;
+  }).join('');
+  const legend = REV_ORDER.map(n => `<span class="rev-legend"><i style="background:${REV_GAMES[n].a};"></i>${n}</span>`).join('');
+  return `${table}
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:18px 0 6px;">${legend}</div>
+    <div class="rev-chart-scroll"><svg viewBox="0 0 ${W} ${H}" class="rev-svg">${grid}${xl}${lines}</svg></div>`;
+}
+
+function renderRevGame(name) {
+  const c = REV_GAMES[name], d = REVENUE.games[name] || {};
+  const months = revMonths().filter(m => d[m] != null);
+  if (!months.length) return `<div style="text-align:center;padding:20px 0;color:var(--text2);font-size:13px;">데이터가 없어요.</div>`;
+  const vals = months.map(m => d[m]), max = Math.max(...vals);
+  const last = months.length - 1, avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const best = vals.indexOf(max);
+  const stats = `<div class="r-stats" style="--gm:${c.m};margin-bottom:16px;">
+    <div class="r-stat"><p class="r-num" style="color:${c.a};">${fmtUSD(vals[last])}</p><p class="r-lbl">${mLabel(months[last], true)} · ${chgTag(vals[last], vals[last - 1])}</p></div>
+    <div class="r-stat"><p class="r-num" style="color:${c.a};">${fmtUSD(avg)}</p><p class="r-lbl">12개월 평균</p></div>
+    <div class="r-stat"><p class="r-num" style="color:${c.a};">${fmtUSD(max)}</p><p class="r-lbl">최고 · ${mLabel(months[best], true)}</p></div>
+  </div>`;
+  const bars = months.map((m, i) => `<div class="rev-col" title="${mLabel(m, true)} ${fmtUSD(vals[i])}">
+      <span class="rev-val" style="${i === last ? `color:${c.a};font-weight:600;` : ''}">${fmtM(vals[i])}</span>
+      <div class="rev-bar" style="height:${Math.max(2, vals[i] / max * 100)}%;background:${c.a};opacity:${i === last ? 1 : 0.35};"></div>
+      <span class="rev-mon">${mLabel(m)}</span>
+    </div>`).join('');
+  return `${stats}<p style="font-size:11px;color:var(--text3);margin-bottom:6px;">월별 매출 (단위: 백만 달러)</p>
+    <div class="rev-bars">${bars}</div>`;
+}
+
+window.setRevGame = name => { revGame = name; refreshTools(); };
 
 // ── 가챠 계산기 ───────────────────────────────────────
 const GC_CFG = {
@@ -818,9 +957,8 @@ const GC_CFG = {
     c:{ hard:80, soft:62, base:0.008, incr:0.055, win:0.75, avg:50, capture:false },
     w:{ hard:80, soft:62, base:0.008, incr:0.055, win:1.00, avg:50, fatepoint:false },
     currency:'별의 소리', fateName:'금빛 파도의 무늬', fateNameW:'울린 조수의 무늬', gpp:160, truckWon:119000 },
-  endfield: { name:'엔드필드',icon:'icon-endfield.png', ready:false },
 };
-const GC_ORDER = ['genshin','starrail','wuwa','endfield'];
+const GC_ORDER = ['genshin','starrail','wuwa'];
 const GC_ST = [
   { k:'여유로움',     sc:'#3B6D11', sb:'#EAF3DE', sp:'#27500A', img:'gacha-1.webp', msg:'충분해! 최악이 와도 충분히 먹을 수 있어.' },
   { k:'할만한데?',    sc:'#0F6E56', sb:'#E1F5EE', sp:'#085041', img:'gacha-2.webp', msg:'평균적으론 돼. 운이 나쁘면 좀 빡세지긴 해.' },
@@ -928,14 +1066,11 @@ function renderGachaCalc() {
       <img src="${g.icon}" onerror="this.style.display='none'">${g.name}
     </button>`;
   }).join('');
-  return `<div style="margin-top:28px;">
-    <p class="section-label">가챠 기댓값 계산기</p>
-    <div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:20px;">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">${btns}</div>
+  return `<div class="tool-panel">
+      <div class="tool-games">${btns}</div>
       <div id="gc-form"></div>
     </div>
-    <div id="gc-res" style="margin-top:12px;"></div>
-  </div>`;
+    <div id="gc-res" style="margin-top:12px;"></div>`;
 }
 
 function gcInitForm() {
@@ -1372,7 +1507,10 @@ window.scReset = function() {
 // ── 데이터 fetch ──────────────────────────────────────
 async function fetchData() {
   try {
-    const res = await fetch(CSV_URL);
+    const [res] = await Promise.all([
+      fetch(CSV_URL),
+      fetch('revenue.json').then(r => r.ok ? r.json() : null).then(j => { REVENUE = j; }).catch(() => {}),
+    ]);
     if (!res.ok) throw new Error('fetch failed');
     const text = await res.text();
     const rows = parseCSV(text);
