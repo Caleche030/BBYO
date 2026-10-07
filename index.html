@@ -227,7 +227,6 @@
   .r-error  { background: #FEF3E0; border: 0.5px solid #FAC775; }
   .r-none   { background: var(--bg3); border: 0.5px solid var(--border); }
   .r-char { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
-  .r-archon-tag { font-size: 11px; font-weight: 600; vertical-align: middle; margin-left: 6px; opacity: 0.7; }
   .r-retire-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
   .r-retire-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
   .r-retire-note { font-size: 12px; color: var(--text2); }
@@ -350,7 +349,6 @@ const GAME_ORDER = ['원신', '붕스', '명조'];
 // 복각 계산 특수 처리 캐릭터
 const SPECIAL_CHARS = {
   '원신': {
-    archons:  ['벤티', '종려', '라이덴 쇼군', '나히다', '푸리나', '마비카'],
     standard: ['타이나리', '유메미즈키 미즈키', '데히야'],
   },
   '붕스': {
@@ -600,13 +598,12 @@ function calcRerun(gameData, q, gameName) {
     // 픽뚫(선택) 배너 이동 캐릭터
     if (specGame?.pickable?.includes(exact))
       return { type: 'retired', name: exact, reason: 'pickable', lastV: info.last.v, lastE: info.last.e };
-    const isArchon = specGame?.archons?.includes(exact) ?? false;
     const lastS = pd(info.last.s), lastE = pd(info.last.e);
     const lastBannerEnd = (info.last.half === '전반' && lastS) ? addDays(lastS, 21) : lastE;
     const daysSince = lastBannerEnd ? Math.max(0, Math.floor((TODAY - lastBannerEnd) / 86400000)) : 0;
     const pastVers = gameData.slice(info.last.idx + 1).filter(v => { const s = pd(v.s); return s && s <= TODAY; }).length;
-    const expectedRerun = isArchon ? null : getExpectedRerun(gameData, exact, info.last.idx, gameName);
-    return { type: 'found', name: exact, lastV: info.last.v, lastE: info.last.e, daysSince, pastVers, rerunCount: info.rerunCount, expectedRerun, isArchon };
+    const expectedRerun = getExpectedRerun(gameData, exact, info.last.idx, gameName);
+    return { type: 'found', name: exact, lastV: info.last.v, lastE: info.last.e, daysSince, pastVers, rerunCount: info.rerunCount, expectedRerun };
   }
   const partial = keys.filter(k => k.includes(q) || q.includes(k));
   if (partial.length === 1) return calcRerun(gameData, partial[0], gameName);
@@ -636,9 +633,7 @@ function renderResult(res, gameName) {
   if (res.type === 'found') {
     const exp = res.expectedRerun;
     let expBox;
-    if (res.isArchon) {
-      expBox = `<div class="r-stat"><p class="r-num" style="color:${c.a};">집정관</p><p class="r-lbl">순환 복각 대상</p></div>`;
-    } else if (exp && exp.type === 'confirmed' && exp.date) {
+    if (exp && exp.type === 'confirmed' && exp.date) {
       const dl = Math.max(0, Math.ceil((exp.date - TODAY) / 86400000));
       expBox = `<div class="r-stat"><p class="r-num" style="color:${c.a};">${dl === 0 ? '오늘' : 'D-' + dl}</p><p class="r-lbl">${exp.ver}버전 복각 확정</p></div>`;
     } else if (exp && exp.type === 'estimated') {
@@ -647,7 +642,7 @@ function renderResult(res, gameName) {
       expBox = `<div class="r-stat"><p class="r-num" style="color:var(--text3);">미정</p><p class="r-lbl">예상 복각</p></div>`;
     }
     return `<div class="result-box r-found" style="--gb:${c.b};--gm:${c.m};">
-    <p class="r-char" style="color:${c.a};">${res.name}${res.isArchon ? ` <span class="r-archon-tag" style="color:${c.a};">집정관</span>` : ''}</p>
+    <p class="r-char" style="color:${c.a};">${res.name}</p>
     <div class="r-stats">
       <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.pastVers}</p><p class="r-lbl">버전 경과</p></div>
       <div class="r-stat"><p class="r-num" style="color:${c.a};">${res.daysSince}</p><p class="r-lbl">일째 미복각</p></div>
