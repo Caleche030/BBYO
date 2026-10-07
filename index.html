@@ -933,16 +933,28 @@ function revTipHTML(game, m) {
   let body;
   if (!picks) body = `<div style="font-size:11px;color:var(--text3);">버전·픽업 정보가 없는 게임이에요.</div>`;
   else if (!picks.length) body = `<div style="font-size:11px;color:var(--text3);">이 달에 해당하는 버전 정보가 없어요.</div>`;
-  else body = `<div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:5px;border-top:0.5px solid var(--border);padding-top:7px;">이 달의 픽업</div>` +
-    picks.map(p => {
-      const tags = p.n.map(x => `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${c.b};color:${c.p};font-weight:500;">${x}</span>`).join('') +
-        p.r.map(x => `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--text2);">${x}</span>`).join('');
-      return `<div style="margin-bottom:7px;">
-        <div style="font-size:11px;color:var(--text);margin-bottom:3px;"><b>${p.ver} ${p.h}</b>
-          <span style="color:var(--text3);">${fmt(p.hs)}–${fmt(p.he)} · 이 달 ${p.days}일</span></div>
-        <div style="display:flex;flex-wrap:wrap;gap:3px;">${tags || '<span style="font-size:10px;color:var(--text3);">정보 없음</span>'}</div>
-      </div>`;
-    }).join('');
+  else {
+    // 이 달에서 차지한 일수 비중 → 가장 큰 구간 하이라이트, 신캐 없는 구간은 '복각만' 표시
+    const dim = new Date(+y, +mo, 0).getDate();
+    const top = picks.reduce((bi, p, i) => p.days > picks[bi].days ? i : bi, 0);
+    const split = `<div style="display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;margin-bottom:8px;background:var(--bg3);">
+      ${picks.map((p, i) => `<div style="width:${p.days / dim * 100}%;background:${c.a};opacity:${i === top ? 1 : 0.3};"></div>`).join('')}</div>`;
+    body = `<div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:5px;border-top:0.5px solid var(--border);padding-top:7px;">이 달의 픽업 비중</div>` + split +
+      picks.map((p, i) => {
+        const isTop = i === top, pct = Math.round(p.days / dim * 100);
+        const rerunOnly = !p.n.length && p.r.length;
+        const tags = p.n.map(x => `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${isTop ? 'var(--bg)' : c.b};color:${c.p};font-weight:600;">${x}</span>`).join('') +
+          p.r.map(x => `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--text2);">${x}</span>`).join('');
+        const badge = (txt, bg, fg) => `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:${bg};color:${fg};margin-left:4px;">${txt}</span>`;
+        return `<div style="margin-bottom:6px;padding:${isTop ? '7px 8px' : '2px 8px'};border-radius:6px;${isTop ? `background:${c.b};border-left:3px solid ${c.a};` : 'border-left:3px solid transparent;opacity:0.55;'}">
+          <div style="font-size:11px;color:var(--text);margin-bottom:3px;"><b style="${isTop ? `color:${c.a};` : ''}">${p.ver} ${p.h}</b>
+            <span style="font-weight:${isTop ? 700 : 400};color:${isTop ? c.a : 'var(--text3)'};margin-left:2px;">${pct}%</span>
+            ${isTop ? badge('비중 최대', c.a, c.b) : ''}${rerunOnly ? badge('복각만', '#FAEEDA', '#854F0B') : ''}
+            <div style="font-size:10px;color:var(--text3);">${fmt(p.hs)}–${fmt(p.he)} · 이 달 ${p.days}일</div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px;">${tags || '<span style="font-size:10px;color:var(--text3);">정보 없음</span>'}</div>
+        </div>`;
+      }).join('');
+  }
   return head + body;
 }
 
@@ -1036,13 +1048,13 @@ let revTipEl = null;
 function revTipShow(t, x, y) {
   if (!revTipEl) {
     revTipEl = document.createElement('div');
-    revTipEl.style.cssText = 'display:none;position:fixed;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:12px;z-index:9999;width:240px;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.13);';
+    revTipEl.style.cssText = 'display:none;position:fixed;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:12px;z-index:9999;width:260px;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.13);';
     document.body.appendChild(revTipEl);
   }
   const key = t.dataset.rg + '|' + t.dataset.rm;
   if (revTipEl.dataset.key !== key) { revTipEl.innerHTML = revTipHTML(t.dataset.rg, t.dataset.rm); revTipEl.dataset.key = key; }
   revTipEl.style.display = 'block';
-  const w = 240, h = revTipEl.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+  const w = 260, h = revTipEl.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
   let lx = x + 14, ty = y - 10;
   if (lx + w > vw - 8) lx = Math.max(8, x - w - 14);
   if (ty + h > vh - 8) ty = Math.max(4, vh - h - 8);
