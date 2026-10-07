@@ -168,19 +168,20 @@
 
   /* ── 캐릭터 초상화 ── */
   .pt-box { display: inline-flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; vertical-align: middle; font-weight: 700; }
-  .pt-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pt-box img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
   .pt-r5 { background: linear-gradient(160deg, #94612F 0%, #D9A156 100%); }
   .pt-r4 { background: linear-gradient(160deg, #5E4B94 0%, #A283D6 100%); }
   .pt-r0 { background: var(--bg3); color: var(--text3); border: 0.5px dashed var(--border2); }
   .pt-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 6px 2px 2px; border-radius: 4px; }
-  .pt-tip { display: none; position: fixed; z-index: 10000; pointer-events: none; background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.13); gap: 12px; align-items: center; }
-  .pt-tip-body { min-width: 96px; }
-  .pt-tip-name { font-size: 14px; font-weight: 700; white-space: nowrap; }
-  .pt-tip-sub { font-size: 11px; color: var(--text3); margin: 1px 0 6px; letter-spacing: 1px; }
-  .pt-attr { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--text); margin-top: 4px; white-space: nowrap; }
-  .pt-attr-ic { width: 22px; height: 22px; border-radius: 50%; background: #3A3A3F; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .pt-attr-ic img { width: 16px; height: 16px; object-fit: contain; }
-  .pt-attr-lbl { font-size: 10px; color: var(--text3); font-weight: 400; min-width: 34px; }
+  .pt-tip { display: none; position: fixed; z-index: 10000; pointer-events: none; background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 8px 8px 9px; box-shadow: 0 4px 20px rgba(0,0,0,0.13); flex-direction: column; align-items: center; gap: 7px; }
+  .pt-tip-img { position: relative; }
+  .pt-tip-img .pt-box { border-radius: 10px !important; }
+  .pt-tip-name { font-size: 14px; font-weight: 700; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+  .pt-tip-sub { font-size: 11px; color: var(--text3); margin-top: -4px; }
+  .pt-attr-ic { position: absolute; right: 5px; width: 28px; height: 28px; border-radius: 50%; background: rgba(28,28,32,0.82); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+  .pt-attr-ic img { width: 20px; height: 20px; object-fit: contain; }
+  .pt-attr-tr { top: 5px; }
+  .pt-attr-br { bottom: 5px; }
   .tag-pt { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px 2px 2px; }
   .tag-n[data-ch], .tag-r[data-ch] { cursor: default; }
 
@@ -483,16 +484,15 @@ function ptTipShow(t, x, y) {
   const g = t.dataset.cg, n = t.dataset.ch, key = g + '|' + n;
   if (ptTipEl.dataset.key !== key) {
     const p = portraitInfo(g, n);
-    const attr = (key, lbl) => {
+    // 속성 = 우측 상단, 무기(붕스는 운명의 길) = 우측 하단 오버레이. 성급은 배경색으로 구분
+    const attr = (key, pos, lbl) => {
       const a = portraitAttr(g, key);
-      return a ? `<div class="pt-attr"><span class="pt-attr-ic"><img src="${a.f}" alt=""></span><span class="pt-attr-lbl">${lbl}</span>${a.n}</div>` : '';
+      return a ? `<span class="pt-attr-ic pt-attr-${pos}" title="${lbl} · ${a.n}"><img src="${a.f}" alt="${a.n}"></span>` : '';
     };
-    ptTipEl.innerHTML = `${portraitBox(g, n, 76)}
-      <div class="pt-tip-body">
-        <div class="pt-tip-name">${n}</div>
-        <div class="pt-tip-sub">${p ? `<span style="color:${p.r === 5 ? '#C88A2E' : '#8A6BC8'};">${'★'.repeat(p.r)}</span>` : '이미지 준비 중'}</div>
-        ${p ? attr(p.e, '속성') + attr(p.w, PT_WLABEL[g] || '무기') : ''}
-      </div>`;
+    ptTipEl.innerHTML = `<div class="pt-tip-img">${portraitBox(g, n, 128)}
+        ${p ? attr(p.e, 'tr', '속성') + attr(p.w, 'br', PT_WLABEL[g] || '무기') : ''}</div>
+      <div class="pt-tip-name">${n}</div>
+      ${p ? '' : '<div class="pt-tip-sub">이미지 준비 중</div>'}`;
     ptTipEl.dataset.key = key;
   }
   ptTipEl.style.display = 'flex';
