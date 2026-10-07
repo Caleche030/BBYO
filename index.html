@@ -311,9 +311,50 @@
   .gc-seg button.on { background:var(--gc-a,#BA7517); color:var(--gc-b,#FEF3E0); font-weight:500; }
   .gc-inp { padding:8px 10px; border:0.5px solid var(--border2); border-radius:var(--radius); font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); outline:none; }
   .gc-inp:focus { border-color:var(--gc-a,#BA7517); }
-  .gc-go { width:100%; padding:11px; border:none; border-radius:var(--radius); font-size:14px; font-weight:500; cursor:pointer; font-family:inherit; transition:opacity 0.15s; }
-  .gc-go:hover { opacity:0.85; }
-  .gc-stat { background:var(--bg2); border-radius:var(--radius); padding:10px 4px; text-align:center; }
+  .gc-row { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:13px; }
+  .gc-row:last-child { margin-bottom:0; }
+  .gc-lbl { font-size:12px; color:var(--text2); margin-bottom:5px; }
+  .gc-result { background:var(--bg); border:0.5px solid var(--border2); border-radius:var(--radius-lg); overflow:hidden; }
+  .gc-head { display:flex; align-items:center; gap:16px; padding:16px 20px; }
+  .gc-head img { width:72px; height:72px; border-radius:10px; object-fit:cover; object-position:top; flex-shrink:0; }
+  .gc-head-k { font-size:20px; font-weight:700; }
+  .gc-head-msg { font-size:13px; color:var(--text2); margin-top:3px; }
+  .gc-head-pct { text-align:right; flex-shrink:0; }
+  .gc-head-pct b { display:block; font-size:38px; font-weight:800; line-height:1; }
+  .gc-head-pct b small { font-size:18px; font-weight:700; margin-left:1px; }
+  .gc-head-pct span { font-size:11px; color:var(--text2); }
+  .gc-avail { font-size:12px; color:var(--text2); padding:10px 20px; border-bottom:0.5px solid var(--border); }
+  .gc-avail b { color:var(--text); }
+  .gc-sec { padding:14px 20px; border-bottom:0.5px solid var(--border); }
+  .gc-sec-t { font-size:12px; font-weight:600; color:var(--text2); margin-bottom:10px; }
+  .gc-pts { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; }
+  .gc-pt { background:var(--bg2); border-radius:var(--radius); padding:10px 4px; text-align:center; }
+  .gc-pt-v { font-size:20px; font-weight:700; }
+  .gc-pt-v small { font-size:11px; font-weight:500; margin-left:1px; }
+  .gc-pt-l { font-size:11px; color:var(--text2); margin-top:2px; }
+  .gc-pt-ok { font-size:10px; margin-top:3px; }
+  .gc-curve { position:relative; height:120px; margin:22px 0 22px; }
+  .gc-curve svg { width:100%; height:100%; display:block; overflow:visible; border-bottom:0.5px solid var(--border2); }
+  .gc-curve-dot { position:absolute; width:10px; height:10px; border-radius:50%; transform:translate(-50%, -50%); box-shadow:0 0 0 2px var(--bg); }
+  .gc-curve-tag { position:absolute; top:-20px; font-size:11px; font-weight:700; white-space:nowrap; padding:0 4px; }
+  .gc-curve-x { position:absolute; bottom:-18px; transform:translateX(-50%); font-size:10px; color:var(--text3); white-space:nowrap; }
+  .gc-curve-x:last-of-type { transform:translateX(-100%); }
+  .gc-curve-y { position:absolute; left:2px; transform:translateY(-110%); font-size:10px; color:var(--text3); }
+  .gc-needs { display:flex; gap:8px; flex-wrap:wrap; }
+  .gc-need { flex:1; min-width:150px; background:#FCEBEB; border-radius:var(--radius); padding:11px 13px; }
+  .gc-need.ok { background:#EAF3DE; }
+  .gc-need-l { font-size:11px; color:var(--text2); }
+  .gc-need-v { font-size:17px; font-weight:700; margin-top:2px; color:#A32D2D; }
+  .gc-need.ok .gc-need-v { color:#3B6D11; }
+  .gc-need-s { font-size:12px; color:var(--text2); margin-top:2px; }
+  .gc-note { font-size:11px; color:var(--text3); padding:10px 20px; background:var(--bg2); }
+  @media (max-width: 600px) {
+    .gc-head { padding:14px; gap:12px; }
+    .gc-head img { width:56px; height:56px; }
+    .gc-head-pct b { font-size:30px; }
+    .gc-pts { grid-template-columns:repeat(2, 1fr); }
+    .gc-sec, .gc-avail, .gc-note { padding-left:14px; padding-right:14px; }
+  }
 
   /* ── 비교 탭 스크러버 ── */
   .sc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -1158,127 +1199,97 @@ window.setRevGame = name => { revGame = name; revPage = 0; revTipHide(); refresh
 window.revNav = d => { revPage = Math.max(0, revPage + d); revTipHide(); refreshTools(); };
 
 // ── 가챠 계산기 ───────────────────────────────────────
+// 확률 모델: p번째 뽑기의 5성 확률 = base (soft 전), base + incr×(p-soft+1) (soft 이후), 100% (hard)
+// win = 확정이 아닐 때 5성이 목표일 확률. 지면 다음 5성 확정(무기 운명 포인트도 같은 구조)
+// 검증: tools/gacha_verify.py (정확 DP 계산과 비교)
 const GC_CFG = {
-  genshin:  { name:'원신',    icon:'icon-genshin.png',  ready:true,
-    c:{ hard:90, soft:74, base:0.006, incr:0.06, win:0.55, avg:62, capture:true },
-    w:{ hard:80, soft:63, base:0.007, incr:0.07, win:0.375, avg:52, fatepoint:true },
-    currency:'원석', fateName:'뒤얽힌 인연', gpp:160, truckWon:119000 },
-  starrail: { name:'스타레일', icon:'icon-starrail.png', ready:true,
-    c:{ hard:90, soft:74, base:0.006, incr:0.06, win:0.50, avg:62, capture:false },
-    w:{ hard:80, soft:66, base:0.008, incr:0.07, win:0.75, avg:52, fatepoint:false },
-    currency:'성옥', fateName:'별의 궤도 티켓', gpp:160, truckWon:119000 },
-  wuwa:     { name:'명조',    icon:'icon-wuwa.png',     ready:true,
-    c:{ hard:80, soft:62, base:0.008, incr:0.055, win:0.75, avg:50, capture:false },
-    w:{ hard:80, soft:62, base:0.008, incr:0.055, win:1.00, avg:50, fatepoint:false },
-    currency:'별의 소리', fateName:'금빛 파도의 무늬', fateNameW:'울린 조수의 무늬', gpp:160, truckWon:119000 },
+  genshin:  { name:'원신', icon:'icon-genshin.png',
+    c:{ base:0.006, soft:74, incr:0.06, hard:90, win:0.55, capture:true },   // 50/50 + 포착의 빛(통합 55%, 3연속 실패 후 확정)
+    w:{ base:0.007, soft:63, incr:0.07, hard:80, win:0.375 },               // 75% 픽업 × 2종 중 1 = 37.5%, 운명 포인트 1이면 확정
+    currency:'원석', fateName:'뒤얽힌 인연', gpp:160 },
+  starrail: { name:'스타레일', icon:'icon-starrail.png',
+    c:{ base:0.006, soft:74, incr:0.06, hard:90, win:0.5 },
+    w:{ base:0.008, soft:66, incr:0.07, hard:80, win:0.75 },
+    currency:'성옥', fateName:'별의 궤도 티켓', gpp:160 },
+  wuwa:     { name:'명조', icon:'icon-wuwa.png',
+    // soft pity 곡선은 공식 미공개 → 커뮤니티 통계(5성 평균 ≈54뽑)에 맞춘 근사값
+    c:{ base:0.008, soft:66, incr:0.06, hard:80, win:0.5 },
+    w:{ base:0.008, soft:66, incr:0.06, hard:80, win:1 },
+    currency:'별의 소리', fateName:'금빛 파도의 무늬', fateNameW:'울린 조수의 무늬', gpp:160 },
 };
-const GC_ORDER = ['genshin','starrail','wuwa'];
-const GC_ST = [
-  { k:'여유로움',     sc:'#3B6D11', sb:'#EAF3DE', sp:'#27500A', img:'gacha-1.webp', msg:'충분해! 최악이 와도 충분히 먹을 수 있어.' },
-  { k:'할만한데?',    sc:'#0F6E56', sb:'#E1F5EE', sp:'#085041', img:'gacha-2.webp', msg:'평균적으론 돼. 운이 나쁘면 좀 빡세지긴 해.' },
-  { k:'쓰읍 이건 좀', sc:'#854F0B', sb:'#FAEEDA', sp:'#633806', img:'gacha-3.webp', msg:'이건 좀 아닌 것 같은데. 엄청 운이 따라줘야 해.' },
-  { k:'다시 생각해봐', sc:'#A32D2D', sb:'#FCEBEB', sp:'#791F1F', img:'gacha-4.webp', msg:'솔직히 말해줄게. 재화가 많이 부족해.' }
+const GC_ORDER = ['genshin', 'starrail', 'wuwa'];
+const GC_TRUCK = { gems: 8080, won: 119000 };   // 6480+1600 상품 (세 게임 동일)
+const GC_ST = [  // 성공 확률 기준 판정
+  { min:95, k:'여유로움',     sc:'#3B6D11', sb:'#EAF3DE', img:'gacha-1.webp', msg:'넉넉해! 운이 꽤 나빠도 먹을 수 있어.' },
+  { min:70, k:'할만한데?',    sc:'#0F6E56', sb:'#E1F5EE', img:'gacha-2.webp', msg:'확률은 꽤 높아. 운이 나쁘면 모자랄 수도 있어.' },
+  { min:30, k:'쓰읍 이건 좀', sc:'#854F0B', sb:'#FAEEDA', img:'gacha-3.webp', msg:'반반 정도야. 운이 좀 따라줘야 해.' },
+  { min:0,  k:'다시 생각해봐', sc:'#A32D2D', sb:'#FCEBEB', img:'gacha-4.webp', msg:'솔직히 말해줄게. 재화가 많이 부족해.' },
 ];
 let gcGame = 'genshin';
 
-function gcProb(pity, pulls, cfg) {
-  if (pulls <= 0) return 0;
-  let none = 1;
-  for (let i = 0; i < pulls; i++) {
-    const p = pity + i + 1;
-    const r = p < cfg.soft ? cfg.base : p < cfg.hard ? cfg.base + cfg.incr * (p - cfg.soft + 1) : 1;
-    none *= (1 - Math.min(1, r));
-    if (none < 0.0001) break;
-  }
-  return (1 - none) * 100;
-}
-
-function gcAvgRem(pity, cfg) {
-  return pity <= cfg.soft
-    ? Math.max(1, Math.round(cfg.avg - pity * (cfg.avg / cfg.hard)))
-    : Math.max(1, Math.round((cfg.hard - cfg.soft) / 2 - (pity - cfg.soft) * 0.6));
-}
-
-function gcCharBest(n, pity, cfg) { return Math.round(gcAvgRem(pity, cfg) + (n - 1) * cfg.avg); }
-function gcCharAvg(n, guar, pity, cfg) {
-  const rem = gcAvgRem(pity, cfg), per = cfg.avg + (1 - cfg.win) * cfg.avg;
-  return guar === '확 천장'
-    ? Math.round(rem + (n - 1) * per)
-    : Math.round(rem + (1 - cfg.win) * cfg.avg + (n - 1) * per);
-}
-function gcCharWorst(n, guar, pity, cfg) {
-  const rem = Math.max(1, cfg.hard - pity), conf = guar === '확 천장';
-  let tot = 0, con = 0;
-  if (conf) {
-    tot += rem;
-    for (let i = 1; i < n; i++) {
-      if (cfg.capture && con === 3) { tot += cfg.hard; con = 0; } else { tot += cfg.hard * 2; con++; }
+// 목표 n개를 얻기까지 총 뽑기 수 분포 P(T=t) (정확 DP)
+// 상태: 현재 스택, 확정 여부, 포착의 빛 연속 실패 카운터(원신 캐릭터), 획득 수
+function gcDist(cfg, n, pity, guar) {
+  const H = cfg.hard, C = cfg.capture ? 4 : 1;
+  const rate = new Float64Array(H + 1);
+  for (let p = 1; p <= H; p++) rate[p] = p >= H ? 1 : p < cfg.soft ? cfg.base : Math.min(1, cfg.base + cfg.incr * (p - cfg.soft + 1));
+  const S = n * 2 * C * H, ix = (k, g, c, p) => ((k * 2 + g) * C + c) * H + p;
+  let cur = new Float64Array(S);
+  cur[ix(0, guar ? 1 : 0, 0, Math.min(pity, H - 1))] = 1;
+  const out = [0];
+  let alive = 1;
+  for (let t = 1; alive > 1e-9 && t < 3000; t++) {
+    const nx = new Float64Array(S);
+    let done = 0;
+    for (let k = 0; k < n; k++) for (let g = 0; g < 2; g++) for (let c = 0; c < C; c++) for (let p = 0; p < H; p++) {
+      const q = cur[ix(k, g, c, p)];
+      if (!q) continue;
+      const r = rate[p + 1], q5 = q * r;
+      if (r < 1) nx[ix(k, g, c, p + 1)] += q - q5;
+      // 5성 획득
+      const win = g ? 1 : (cfg.capture && c === 3) ? 1 : cfg.win;
+      const qw = q5 * win, ql = q5 - qw;
+      const c2 = g ? c : 0;   // 확정 획득은 카운터 유지, 50/50 승리(포착 포함)는 초기화
+      if (k + 1 === n) done += qw; else nx[ix(k + 1, 0, c2, 0)] += qw;
+      if (ql) nx[ix(k, 1, Math.min(c + 1, C - 1), 0)] += ql;
     }
-  } else {
-    for (let i = 0; i < n; i++) {
-      if (cfg.capture && con === 3) { tot += cfg.hard; con = 0; } else { tot += (i === 0 ? rem + cfg.hard : cfg.hard * 2); con++; }
-    }
+    out.push(done);
+    alive -= done;
+    cur = nx;
   }
-  return tot;
-}
-function gcWeapBest(n, pity, cfg) { return Math.round(gcAvgRem(pity, cfg) + (n - 1) * cfg.avg); }
-function gcWeapAvg(n, guar, pity, cfg) {
-  const rem = gcAvgRem(pity, cfg);
-  if (cfg.fatepoint) {
-    const isS = guar === '운명 포인트 1';
-    return Math.round(rem + (isS ? 0.25 : 0.75) * cfg.avg + (n - 1) * 91);
-  }
-  const per = cfg.avg + (1 - cfg.win) * cfg.avg;
-  return guar === '확 천장'
-    ? Math.round(rem + (n - 1) * per)
-    : Math.round(rem + (1 - cfg.win) * cfg.avg + (n - 1) * per);
-}
-function gcWeapWorst(n, guar, pity, cfg) {
-  const rem = Math.max(1, cfg.hard - pity);
-  if (cfg.fatepoint) {
-    const isS = guar === '운명 포인트 1';
-    return isS ? rem + cfg.hard + (n - 1) * cfg.hard * 2 : rem + cfg.hard * 2 + (n - 1) * cfg.hard * 2;
-  }
-  if (cfg.win >= 1.0) return rem + (n - 1) * cfg.hard;
-  return guar === '확 천장'
-    ? rem + (n - 1) * cfg.hard * 2
-    : rem + cfg.hard + (n - 1) * cfg.hard * 2;
+  return out;
 }
 
-function gcGetSeg(id) { const e = document.querySelector('#'+id+' button.on'); return e ? e.textContent.trim() : ''; }
-
-function gcZoneBar(best, avg, worst, avail) {
-  const mx = Math.max(avail * 1.1, worst * 1.1, 1);
-  const pB = Math.min(93, best/mx*100), pA = Math.min(93, avg/mx*100), pW = Math.min(93, worst/mx*100), pV = Math.min(97, avail/mx*100);
-  const mc = avail >= worst ? '#3B6D11' : avail >= avg ? '#0F6E56' : avail >= best ? '#854F0B' : '#A32D2D';
-  return `<div style="position:relative;margin-bottom:6px;">
-    <div style="height:12px;border-radius:6px;overflow:hidden;display:flex;background:var(--bg3);">
-      <div style="width:${pB}%;background:#3B6D11;opacity:0.75;"></div>
-      <div style="width:${pA-pB}%;background:#C88A00;opacity:0.75;"></div>
-      <div style="width:${pW-pA}%;background:#C0531A;opacity:0.75;"></div>
-      <div style="flex:1;background:#A32D2D;opacity:0.2;"></div>
-    </div>
-    <div style="position:absolute;top:-4px;left:${pV}%;transform:translateX(-50%);width:2.5px;height:20px;background:${mc};border-radius:2px;"></div>
-  </div>
-  <div style="position:relative;height:16px;margin-bottom:4px;">
-    ${[{p:pB,v:best},{p:pA,v:avg},{p:pW,v:worst}].map(({p,v})=>`
-      <span style="position:absolute;left:${p}%;transform:translateX(-50%);font-size:9px;color:var(--text3);">${v}</span>`).join('')}
-  </div>
-  <div style="display:flex;justify-content:space-between;font-size:10px;">
-    <span style="color:${mc};font-weight:500;">▲ 보유 ${avail}뽑</span>
-    <span style="color:var(--text3);">최선 ${best} · 평균 ${avg} · 최악 ${worst}</span>
-  </div>`;
+// 최악(천장만 계속): 매번 천장까지, 확정이 아니면 50/50도 짐
+function gcWorst(cfg, n, pity, guar) {
+  let t = 0, k = 0, g = guar, c = 0, first = true;
+  while (k < n) {
+    t += first ? cfg.hard - Math.min(pity, cfg.hard - 1) : cfg.hard;
+    first = false;
+    if (g || cfg.win >= 1 || (cfg.capture && c === 3)) { k++; if (!g) c = 0; g = false; }
+    else { g = true; c++; }
+  }
+  return t;
 }
+
+function gcStats(dist) {
+  let mean = 0, acc = 0, q50 = 0, q90 = 0;
+  const cdf = new Float64Array(dist.length);
+  for (let t = 1; t < dist.length; t++) {
+    mean += t * dist[t]; acc += dist[t]; cdf[t] = acc;
+    if (!q50 && acc >= 0.5) q50 = t;
+    if (!q90 && acc >= 0.9) q90 = t;
+  }
+  return { mean: Math.round(mean), q50, q90, cdf };
+}
+function gcCdfAt(cdf, t) { return t <= 0 ? 0 : t >= cdf.length ? 1 : cdf[t]; }
+
+function gcGetSeg(id) { const e = document.querySelector('#' + id + ' button.on'); return e ? e.textContent.trim() : ''; }
 
 function renderGachaCalc() {
   const btns = GC_ORDER.map(id => {
     const g = GC_CFG[id], gc = GAME_CONFIG[g.name] || {};
-    const on = id === gcGame;
-    const ac = gc.a || '#999';
-    return `<button class="gc-game-btn${on?' on':''}" id="gc-gb-${id}" onclick="gcSelGame('${id}',this)"
-      style="${on?`border-color:${ac};color:${ac};background:var(--bg);font-weight:500;`:''}${!g.ready?'opacity:0.45;':''}">
-      <img src="${g.icon}" onerror="this.style.display='none'">${g.name}
-    </button>`;
+    return toolGameBtn(id === gcGame, gc.a || '#999', g.icon, g.name, `gcSelGame('${id}')`, `id="gc-gb-${id}"`);
   }).join('');
   return `<div class="tool-panel">
       <div class="tool-games">${btns}</div>
@@ -1291,191 +1302,127 @@ function gcInitForm() {
   const el = document.getElementById('gc-form');
   if (!el) return;
   const g = GC_CFG[gcGame];
-  if (!g || !g.ready) {
-    el.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--text2);font-size:13px;">이 게임은 아직 준비 중이야. 곧 추가할게!</div>`;
-    return;
-  }
-  const gc = GAME_CONFIG[g.name] || {}, ac = gc.a||'#BA7517', bc = gc.b||'#FEF3E0';
+  const gc = GAME_CONFIG[g.name] || {}, ac = gc.a || '#BA7517', bc = gc.b || '#FEF3E0';
   el.style.setProperty('--gc-a', ac);
   el.style.setProperty('--gc-b', bc);
   el.innerHTML = `
-    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:13px;">
-      <div>
-        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;">배너</p>
+    <div class="gc-row">
+      <div><p class="gc-lbl">배너</p>
         <div class="gc-seg" id="gc-bt">
           <button class="on" onclick="gcSetSeg(this,'gc-bt');gcUpBanner()">캐릭터</button>
           <button onclick="gcSetSeg(this,'gc-bt');gcUpBanner()">무기</button>
-        </div>
-      </div>
-      <div>
-        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;" id="gc-gl">목표 돌파</p>
-        <div class="gc-seg" id="gc-cop"></div>
-      </div>
-      <div id="gc-gur-wrap">
-        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;">천장 상태</p>
-        <div class="gc-seg" id="gc-gur"></div>
-      </div>
+        </div></div>
+      <div><p class="gc-lbl" id="gc-gl">목표 돌파</p><div class="gc-seg" id="gc-cop"></div></div>
+      <div id="gc-gur-wrap"><p class="gc-lbl">천장 상태</p><div class="gc-seg" id="gc-gur"></div></div>
     </div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
-      <div>
-        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;">현재 스택</p>
-        <input class="gc-inp" type="number" id="gc-pity" min="0" max="${g.c.hard-1}" value="0" style="width:90px;">
-      </div>
-      <div>
-        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;">${g.currency}</p>
-        <input class="gc-inp" type="number" id="gc-gems" min="0" value="0" style="width:110px;">
-      </div>
-      <div>
-        <p style="font-size:12px;color:var(--text2);margin-bottom:5px;" id="gc-fate-lbl">${g.fateName}</p>
-        <input class="gc-inp" type="number" id="gc-fates" min="0" value="0" style="width:100px;">
-      </div>
-    </div>
-    <button class="gc-go" onclick="gcDoCalc()" style="background:${ac};color:${bc};">계산하기</button>`;
+    <div class="gc-row">
+      <div><p class="gc-lbl">현재 스택</p><input class="gc-inp" type="number" id="gc-pity" min="0" value="0" style="width:90px;" oninput="gcDoCalc()"></div>
+      <div><p class="gc-lbl">${g.currency}</p><input class="gc-inp" type="number" id="gc-gems" min="0" value="0" style="width:110px;" oninput="gcDoCalc()"></div>
+      <div><p class="gc-lbl" id="gc-fate-lbl">${g.fateName}</p><input class="gc-inp" type="number" id="gc-fates" min="0" value="0" style="width:100px;" oninput="gcDoCalc()"></div>
+    </div>`;
   gcUpBanner();
 }
 
-window.gcSelGame = function(id, btn) {
+window.gcSelGame = function(id) {
   gcGame = id;
-  GC_ORDER.forEach(gid => {
-    const b = document.getElementById('gc-gb-'+gid);
-    if (!b) return;
-    const gc = GAME_CONFIG[GC_CFG[gid].name] || {}, ac = gc.a||'#999';
-    if (gid === id) {
-      b.classList.add('on');
-      b.style.cssText += `border-color:${ac};color:${ac};background:var(--bg);font-weight:500;`;
-    } else {
-      b.classList.remove('on');
-      b.style.borderColor = ''; b.style.color = ''; b.style.background = ''; b.style.fontWeight = '';
-    }
-  });
-  document.getElementById('gc-res').innerHTML = '';
-  gcInitForm();
+  refreshTools();
 };
 
 window.gcSetSeg = function(btn, id) {
-  document.querySelectorAll('#'+id+' button').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('#' + id + ' button').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
 };
 
 window.gcUpBanner = function() {
   const isW = gcGetSeg('gc-bt') === '무기';
-  const g = GC_CFG[gcGame];
-  const gl = document.getElementById('gc-gl'), pi = document.getElementById('gc-pity');
-  if (gl) gl.textContent = isW ? '목표 재련' : '목표 돌파';
-  if (pi) pi.max = isW ? (g&&g.w ? g.w.hard-1 : 79) : (g&&g.c ? g.c.hard-1 : 89);
-  const fateLbl = document.getElementById('gc-fate-lbl');
-  if (fateLbl && g) fateLbl.textContent = isW ? (g.fateNameW || g.fateName) : g.fateName;
-  const cop = document.getElementById('gc-cop'), gur = document.getElementById('gc-gur');
-  if (!cop || !gur) return;
-  cop.innerHTML = (isW ? ['R1','R2','R3','R4','R5'] : ['C0','C1','C2','C3','C4','C5','C6'])
-    .map((l,i)=>`<button${i===0?' class="on"':''} onclick="gcSetSeg(this,'gc-cop')">${l}</button>`).join('');
-  const useFP = isW && g && g.w && g.w.fatepoint;
-  const noGuar = isW && g && g.w && g.w.win >= 1.0;
-  const gurWrap = document.getElementById('gc-gur-wrap');
-  if (gurWrap) gurWrap.style.display = noGuar ? 'none' : '';
-  gur.innerHTML = useFP
-    ? `<button class="on" onclick="gcSetSeg(this,'gc-gur')">운명 포인트 0</button><button onclick="gcSetSeg(this,'gc-gur')">운명 포인트 1</button>`
-    : `<button class="on" onclick="gcSetSeg(this,'gc-gur')">반 천장</button><button onclick="gcSetSeg(this,'gc-gur')">확 천장</button>`;
+  const g = GC_CFG[gcGame], cfg = isW ? g.w : g.c;
+  document.getElementById('gc-gl').textContent = isW ? '목표 재련' : '목표 돌파';
+  document.getElementById('gc-pity').max = cfg.hard - 1;
+  document.getElementById('gc-fate-lbl').textContent = isW ? (g.fateNameW || g.fateName) : g.fateName;
+  document.getElementById('gc-cop').innerHTML = (isW ? ['R1','R2','R3','R4','R5'] : ['C0','C1','C2','C3','C4','C5','C6'])
+    .map((l, i) => `<button${i === 0 ? ' class="on"' : ''} onclick="gcSetSeg(this,'gc-cop');gcDoCalc()">${l}</button>`).join('');
+  const useFP = isW && gcGame === 'genshin';
+  document.getElementById('gc-gur-wrap').style.display = cfg.win >= 1 ? 'none' : '';
+  const opts = useFP ? ['운명 포인트 0', '운명 포인트 1'] : ['반천장', '확천장'];
+  document.getElementById('gc-gur').innerHTML = opts
+    .map((l, i) => `<button${i === 0 ? ' class="on"' : ''} onclick="gcSetSeg(this,'gc-gur');gcDoCalc()">${l}</button>`).join('');
+  gcDoCalc();
 };
 
 window.gcDoCalc = function() {
-  const g = GC_CFG[gcGame]; if (!g || !g.ready) return;
-  const gc = GAME_CONFIG[g.name] || {}, ac = gc.a||'#BA7517', bc = gc.b||'#FEF3E0';
-  const isW = gcGetSeg('gc-bt') === '무기', guar = gcGetSeg('gc-gur'), cfg = isW ? g.w : g.c;
-  const pity = Math.min(parseInt(document.getElementById('gc-pity').value)||0, cfg.hard-1);
-  const gems = parseInt(document.getElementById('gc-gems').value)||0;
-  const fates = parseInt(document.getElementById('gc-fates').value)||0;
-  const cstr = gcGetSeg('gc-cop');
-  const n = isW ? parseInt(cstr.replace('R','')) : parseInt(cstr.replace('C',''))+1;
-  const avail = Math.floor(gems/g.gpp) + fates;
+  const resEl = document.getElementById('gc-res');
+  if (!resEl) return;
+  const g = GC_CFG[gcGame], isW = gcGetSeg('gc-bt') === '무기', cfg = isW ? g.w : g.c;
+  const gur = gcGetSeg('gc-gur'), guar = cfg.win >= 1 || gur === '확천장' || gur === '운명 포인트 1';
+  const pity = Math.max(0, Math.min(parseInt(document.getElementById('gc-pity').value) || 0, cfg.hard - 1));
+  const gems = Math.max(0, parseInt(document.getElementById('gc-gems').value) || 0);
+  const fates = Math.max(0, parseInt(document.getElementById('gc-fates').value) || 0);
+  const cop = gcGetSeg('gc-cop'), n = isW ? +cop.slice(1) : +cop.slice(1) + 1;
+  const avail = Math.floor(gems / g.gpp) + fates;
 
-  const best  = isW ? gcWeapBest(n, pity, cfg)       : gcCharBest(n, pity, cfg);
-  const avg   = isW ? gcWeapAvg(n, guar, pity, cfg)  : gcCharAvg(n, guar, pity, cfg);
-  const worst = isW ? gcWeapWorst(n, guar, pity, cfg): gcCharWorst(n, guar, pity, cfg);
+  const st = gcStats(gcDist(cfg, n, pity, guar));
+  const worst = gcWorst(cfg, n, pity, guar);
+  const pct = gcCdfAt(st.cdf, avail) * 100;
+  const pctTxt = pct >= 99.95 ? '100' : pct > 0 && pct < 0.1 ? '0.1 미만' : pct.toFixed(pct >= 10 ? 0 : 1);
+  const S = GC_ST.find(s => pct >= s.min);
+  const gc = GAME_CONFIG[g.name] || {}, ac = gc.a || '#BA7517';
+  const nextWin = guar ? 100 : Math.round(cfg.win * 100);
 
-  let st = avail >= worst ? GC_ST[0] : avail >= avg ? GC_ST[1] : avail >= Math.round(avg*0.6) ? GC_ST[2] : GC_ST[3];
-  const {k, sc, sb, sp, img, msg} = st;
+  // 필요 뽑기 4지점
+  const pts = [['50% 확률', st.q50], ['평균', st.mean], ['90% 확률', st.q90], ['최악(천장)', worst]];
+  const ptsHtml = pts.map(([l, v]) => {
+    const ok = avail >= v;
+    return `<div class="gc-pt"><p class="gc-pt-v" style="color:${ok ? S.sc : 'var(--text)'};">${v}<small>뽑</small></p>
+      <p class="gc-pt-l">${l}</p><p class="gc-pt-ok" style="color:${ok ? '#3B6D11' : 'var(--text3)'};">${ok ? '✓ 보유로 충분' : `${v - avail}뽑 부족`}</p></div>`;
+  }).join('');
 
-  const dAvg = Math.max(0, avg-avail), dWorst = Math.max(0, worst-avail);
-  const sAvg = Math.max(0, avail-avg), sWorst = Math.max(0, avail-worst);
-  const tAvg = dAvg>0 ? Math.ceil(dAvg*160/8080) : 0, tWorst = dWorst>0 ? Math.ceil(dWorst*160/8080) : 0;
-
-  const wr = isW && cfg.fatepoint
-    ? (guar==='운명 포인트 1'?0.75:0.375)
-    : (guar==='확 천장'?1.0:cfg.win);
-  const p10s = Math.round(gcProb(pity,10,cfg)), p10p = Math.round(p10s*wr);
-  const pAs  = Math.round(gcProb(pity,avail,cfg)), pAp = Math.round(pAs*wr);
-  const pNext = gcProb(pity,1,cfg), pNextP = (pNext*wr).toFixed(1), pNext5 = pNext.toFixed(1);
-  const enoughNext = avail >= best;
-
-  function sbox(lbl, val, isCur) {
-    const ok = avail >= val;
-    const tc = isCur ? (ok?sc:'#A32D2D') : ok?sc:'var(--text2)';
-    const brd = isCur && ok ? `border:1.5px solid ${sc};` : '';
-    return `<div class="gc-stat" style="${brd}">
-      <p style="font-size:16px;font-weight:500;color:${tc};">${val}</p>
-      <p style="font-size:10px;color:var(--text2);margin-top:2px;">${lbl}</p>
-      <p style="font-size:11px;margin-top:2px;color:${ok?sc:'#A32D2D'};">${ok?'✓':'✗'}</p>
+  // 누적 확률 곡선 (x: 0~최악, y: 성공 확률)
+  const W = 600, Hh = 120, xMax = worst;
+  const xs = t => t / xMax * W, ys = p => Hh - p * Hh;
+  let d = `M0,${Hh}`;
+  const step = Math.max(1, Math.floor(xMax / 200));
+  for (let t = 1; t <= xMax; t += step) d += ` L${xs(t).toFixed(1)},${ys(gcCdfAt(st.cdf, t)).toFixed(1)}`;
+  d += ` L${W},${ys(1)}`;
+  const ax = Math.min(avail, xMax), axPct = ax / xMax * 100, ay = gcCdfAt(st.cdf, ax);
+  const mk = (v, l) => `<span class="gc-curve-x" style="left:${v / xMax * 100}%;">${l}</span>`;
+  const curve = `<div class="gc-curve">
+      <svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none">
+        <line x1="0" x2="${W}" y1="${ys(0.5)}" y2="${ys(0.5)}" stroke="var(--border2)" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+        <line x1="0" x2="${W}" y1="${ys(0.9)}" y2="${ys(0.9)}" stroke="var(--border2)" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+        <path d="${d} L${W},${Hh} Z" fill="${ac}" opacity="0.10"/>
+        <path d="${d}" fill="none" stroke="${ac}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
+        <line x1="${xs(ax)}" x2="${xs(ax)}" y1="0" y2="${Hh}" stroke="${S.sc}" stroke-width="2" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>
+      </svg>
+      <span class="gc-curve-y" style="top:50%;">50%</span><span class="gc-curve-y" style="top:10%;">90%</span>
+      <span class="gc-curve-dot" style="left:${axPct}%;top:${(1 - ay) * 100}%;background:${S.sc};"></span>
+      <span class="gc-curve-tag" style="left:${axPct}%;color:${S.sc};${axPct > 75 ? 'transform:translateX(-100%);' : ''}">보유 ${avail}뽑 · ${pctTxt}%</span>
+      ${mk(st.q50, `${st.q50} (50%)`)}${mk(st.q90, `${st.q90} (90%)`)}${mk(worst, `${worst} 최악`)}
     </div>`;
-  }
-  const nextBox = `<div class="gc-stat">
-    <p style="font-size:16px;font-weight:500;color:${sc};">${pNextP}%</p>
-    <p style="font-size:10px;color:var(--text2);margin-top:2px;">다음 1뽑</p>
-    <p style="font-size:10px;color:var(--text3);margin-top:2px;">5성 ${pNext5}%</p>
-  </div>`;
 
-  function costBox(lbl, def, trucks, sur, isAvg) {
-    const bg=isAvg?sb:'var(--bg2)', tc=isAvg?sp:'var(--text)', subc=isAvg?sc:'var(--text2)';
-    return def>0
-      ? `<div style="flex:1;min-width:130px;background:${bg};border-radius:var(--radius);padding:11px 12px;">
-          <p style="font-size:10px;color:${subc};margin-bottom:3px;">${lbl}</p>
-          <p style="font-size:17px;font-weight:500;color:${tc};">${def}뽑 부족</p>
-          <p style="font-size:12px;color:${subc};margin-top:2px;">${trucks}트럭 · ${(trucks*g.truckWon).toLocaleString()}원</p>
-        </div>`
-      : `<div style="flex:1;min-width:130px;background:${bg};border-radius:var(--radius);padding:11px 12px;">
-          <p style="font-size:10px;color:${subc};margin-bottom:3px;">${lbl}</p>
-          <p style="font-size:17px;font-weight:500;color:${isAvg?tc:'#3B6D11'};">${sur}뽑 여유</p>
-          <p style="font-size:12px;color:${subc};margin-top:2px;">추가 과금 없음</p>
-        </div>`;
-  }
+  // 추가로 필요
+  const need = (target, label) => {
+    const lack = target - avail;
+    if (lack <= 0) return `<div class="gc-need ok"><p class="gc-need-l">${label}</p><p class="gc-need-v">${-lack}뽑 여유</p><p class="gc-need-s">추가 과금 없음</p></div>`;
+    const gemsNeed = lack * g.gpp, trucks = Math.ceil(gemsNeed / GC_TRUCK.gems);
+    return `<div class="gc-need"><p class="gc-need-l">${label}</p><p class="gc-need-v">${lack}뽑 부족</p>
+      <p class="gc-need-s">${g.currency} ${gemsNeed.toLocaleString()}개 · 약 ${trucks}트럭 (${(trucks * GC_TRUCK.won).toLocaleString()}원)</p></div>`;
+  };
 
-  document.getElementById('gc-res').innerHTML = `
-  <div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden;">
-    <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:18px 20px;">
-      <img src="${img}" style="width:90px;height:90px;border-radius:10px;object-fit:cover;object-position:top;flex-shrink:0;"
-        onerror="this.style.display='none'">
-      <div>
-        <p style="font-size:22px;font-weight:600;color:${sc};margin-bottom:4px;">${k}</p>
-        <p style="font-size:13px;color:var(--text2);">${msg}</p>
+  resEl.innerHTML = `<div class="gc-result">
+    <div class="gc-head" style="background:${S.sb};">
+      <img src="${S.img}" onerror="this.style.display='none'">
+      <div style="flex:1;min-width:0;">
+        <p class="gc-head-k" style="color:${S.sc};">${S.k}</p>
+        <p class="gc-head-msg">${S.msg}</p>
       </div>
+      <div class="gc-head-pct" style="color:${S.sc};"><b>${pctTxt}<small>%</small></b><span>${cop} 획득 확률</span></div>
     </div>
-    <div style="height:0.5px;background:var(--border);"></div>
-    <div style="padding:13px 15px;">
-      <p style="font-size:12px;color:var(--text2);margin-bottom:8px;">시나리오별 필요 뽑기</p>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;">
-        ${sbox('최선',best,false)}${sbox('평균',avg,false)}${sbox('최악',worst,false)}${sbox('현재 보유',avail,true)}${nextBox}
-      </div>
-    </div>
-    <div style="height:0.5px;background:var(--border);"></div>
-    <div style="padding:12px 15px;">
-      <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">보유 뽑기 위치</p>
-      ${gcZoneBar(best,avg,worst,avail)}
-    </div>
-    <div style="height:0.5px;background:var(--border);"></div>
-    <div style="padding:12px 15px;display:flex;gap:8px;flex-wrap:wrap;">
-      ${costBox('평균 기준',dAvg,tAvg,sAvg,true)}${costBox('최악 기준',dWorst,tWorst,sWorst,false)}
-    </div>
-    <div style="height:0.5px;background:var(--border);"></div>
-    <div style="padding:10px 15px;background:var(--bg2);display:flex;gap:20px;flex-wrap:wrap;">
-      <div>
-        <p style="font-size:12px;color:var(--text2);">10뽑 하면 ★5 나올 확률</p>
-        <p style="font-size:15px;font-weight:500;color:${sc};">${p10s}% <span style="font-size:12px;font-weight:400;">· 픽업이면 ${p10p}%</span></p>
-      </div>
-      <div>
-        <p style="font-size:12px;color:var(--text2);">보유 뽑기 전부 쓰면 ★5 확률</p>
-        <p style="font-size:15px;font-weight:500;color:${sc};">${pAs}% <span style="font-size:12px;font-weight:400;">· 픽업이면 ${pAp}%</span></p>
-      </div>
-    </div>
+    <p class="gc-avail">보유 <b>${avail}뽑</b> = ${g.currency} ${gems.toLocaleString()} (${Math.floor(gems / g.gpp)}뽑) + ${isW ? (g.fateNameW || g.fateName) : g.fateName} ${fates}
+      · 다음 5성이 목표일 확률 ${nextWin}%${cfg.capture && !guar ? ' (포착의 빛 포함)' : ''}</p>
+    <div class="gc-sec"><p class="gc-sec-t">${cop}까지 필요한 뽑기</p><div class="gc-pts">${ptsHtml}</div></div>
+    <div class="gc-sec"><p class="gc-sec-t">뽑은 횟수별 성공 확률</p>${curve}</div>
+    <div class="gc-sec"><p class="gc-sec-t">추가로 필요</p><div class="gc-needs">${need(st.q90, '90% 안전선까지')}${need(worst, '최악(천장) 대비')}</div></div>
+    <p class="gc-note">현재 스택 ${pity} · ${gur || '픽업 확정'} 기준.${cfg.capture ? ' 포착의 빛 연속 실패 카운터는 0으로 가정.' : ''}${gcGame === 'wuwa' ? ' 명조 소프트 천장 확률은 공식 미공개라 커뮤니티 통계 기반 근사값.' : ''} 1트럭 = ${GC_TRUCK.gems.toLocaleString()}개(${GC_TRUCK.won.toLocaleString()}원).</p>
   </div>`;
 };
 
