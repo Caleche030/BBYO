@@ -312,6 +312,11 @@
   .gc-inp { padding:8px 10px; border:0.5px solid var(--border2); border-radius:var(--radius); font-size:14px; font-family:inherit; background:var(--bg); color:var(--text); outline:none; }
   .gc-inp:focus { border-color:var(--gc-a,#BA7517); }
   .gc-row { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:13px; }
+  .gc-reset { margin-left:auto; align-self:center; }
+  .gc-guide { background:var(--bg2); }
+  .gc-guide .gc-head-k { color:var(--text); }
+  .gc-steps { margin:0; padding:14px 20px 16px 38px; font-size:13px; color:var(--text2); line-height:1.7; }
+  .gc-steps b { color:var(--text); }
   .gc-row:last-child { margin-bottom:0; }
   .gc-lbl { font-size:12px; color:var(--text2); margin-bottom:5px; }
   .gc-result { background:var(--bg); border:0.5px solid var(--border2); border-radius:var(--radius-lg); overflow:hidden; }
@@ -1226,13 +1231,17 @@ const GC_CFG = {
 };
 const GC_ORDER = ['genshin', 'starrail', 'wuwa'];
 const GC_TRUCK = { gems: 8080, won: 119000 };   // 6480+1600 상품 (세 게임 동일)
-const GC_ST = [  // 보유 재화로 "지금 들어가면" 성공할 확률 기준 판정
-  { min:90, k:'거의 확정',     sc:'#3B6D11', sb:'#EAF3DE', img:'gacha-1.webp', msg:'이 정도면 거의 먹어. 마음 편히 들어가도 돼.' },
-  { min:70, k:'할만한데?',     sc:'#0F6E56', sb:'#E1F5EE', img:'gacha-2.webp', msg:'꽤 높은 확률이야. 운이 아주 나쁘지만 않으면 먹어.' },
-  { min:45, k:'반반 승부',     sc:'#7A6A00', sb:'#FBF3D5', img:'gacha-2.webp', msg:'먹을 수도 못 먹을 수도 있어. 결국 운이야.' },
-  { min:20, k:'쓰읍 이건 좀',  sc:'#854F0B', sb:'#FAEEDA', img:'gacha-3.webp', msg:'못 먹을 확률이 더 커. 조금 더 모으는 걸 추천해.' },
-  { min:0,  k:'다시 생각해봐', sc:'#A32D2D', sb:'#FCEBEB', img:'gacha-4.webp', msg:'솔직히 말해줄게. 지금 재화로는 많이 힘들어.' },
+const GC_ST = [  // 보유 재화로 "지금 들어가면" 성공할 확률 기준 판정. 메시지는 야호다 말투
+  { min:90, k:'거의 확정',     sc:'#3B6D11', sb:'#EAF3DE', img:'gacha-1.webp', msg:'이건 거의 받은 거나 마찬가지야. 헤헤, 들어가서 쓸어 담아 와!' },
+  { min:70, k:'할만한데?',     sc:'#0F6E56', sb:'#E1F5EE', img:'gacha-2.webp', msg:'꽤 짭짤한 확률인데? 운이 아주 꼬이지만 않으면 데려올 수 있을 거야. …아마도.' },
+  { min:45, k:'반반 승부',     sc:'#7A6A00', sb:'#FBF3D5', img:'gacha-2.webp', msg:'음… 딱 반반이야. 될 수도, 안 될 수도. 해볼 거면 말리진 않을게. 대신 결과는 책임 못 져~' },
+  { min:20, k:'쓰읍 이건 좀',  sc:'#854F0B', sb:'#FAEEDA', img:'gacha-3.webp', msg:'쓰읍… 못 먹을 쪽이 더 커. 원하는 걸 얻으려면 그만한 대가가 필요하거든. 조금만 더 모아 오자.' },
+  { min:0,  k:'다시 생각해봐', sc:'#A32D2D', sb:'#FCEBEB', img:'gacha-4.webp', msg:'우왁, 이건 좀 아니다. 이대로 들어가면 빈털터리 돼… 빚까지 져가며 뽑는 건 내가 말릴 거야!' },
 ];
+// 받침 유무로 조사 고르기: josa('원석','과','와') → '원석과'
+function josa(w, a, b) { const c = w.charCodeAt(w.length - 1) - 0xAC00; return w + (c >= 0 && c <= 11171 && c % 28 ? a : b); }
+// 기록 메뉴 이름 (스택 확인 안내용)
+const GC_LOG = { genshin:'기원 기록', starrail:'워프 기록', wuwa:'뽑기 기록' };
 let gcGame = 'genshin';
 
 // 목표 n개를 얻기까지 총 뽑기 수 분포 P(T=t) (정확 DP)
@@ -1300,7 +1309,7 @@ function renderGachaCalc() {
     return toolGameBtn(id === gcGame, gc.a || '#999', g.icon, g.name, `gcSelGame('${id}')`, `id="gc-gb-${id}"`);
   }).join('');
   return `<div class="tool-panel">
-      <div class="tool-games">${btns}</div>
+      <div class="tool-games">${btns}<button class="sc-btn gc-reset" onclick="gcInitForm()" title="입력값 초기화">↺ 초기화</button></div>
       <div id="gc-form"></div>
     </div>
     <div id="gc-res" style="margin-top:12px;"></div>`;
@@ -1324,9 +1333,9 @@ function gcInitForm() {
       <div id="gc-gur-wrap"><p class="gc-lbl">천장 상태</p><div class="gc-seg" id="gc-gur"></div></div>
     </div>
     <div class="gc-row">
-      <div><p class="gc-lbl">현재 스택</p><input class="gc-inp" type="number" id="gc-pity" min="0" value="0" style="width:90px;" oninput="gcDoCalc()"><p class="gc-hint" id="gc-pity-hint"></p></div>
-      <div><p class="gc-lbl">${g.currency}</p><input class="gc-inp" type="number" id="gc-gems" min="0" value="0" style="width:110px;" oninput="gcDoCalc()"></div>
-      <div><p class="gc-lbl" id="gc-fate-lbl">${g.fateName}</p><input class="gc-inp" type="number" id="gc-fates" min="0" value="0" style="width:100px;" oninput="gcDoCalc()"></div>
+      <div><p class="gc-lbl">현재 스택</p><input class="gc-inp" type="number" id="gc-pity" min="0" placeholder="0" style="width:90px;" oninput="gcDoCalc()"><p class="gc-hint" id="gc-pity-hint"></p></div>
+      <div><p class="gc-lbl">${g.currency}</p><input class="gc-inp" type="number" id="gc-gems" min="0" placeholder="0" style="width:110px;" oninput="gcDoCalc()"></div>
+      <div><p class="gc-lbl" id="gc-fate-lbl">${g.fateName}</p><input class="gc-inp" type="number" id="gc-fates" min="0" placeholder="0" style="width:100px;" oninput="gcDoCalc()"></div>
     </div>`;
   gcUpBanner();
 }
@@ -1383,7 +1392,26 @@ window.gcDoCalc = function() {
   if (pity > cfg.hard - 1 || pity < 0) { pity = Math.max(0, Math.min(pity, cfg.hard - 1)); pityEl.value = pity; }
   if (pityHint) pityHint.textContent = `0~${cfg.hard - 1} (${cfg.hard}뽑째 확정)`;
 
-  const gems = Math.max(0, parseInt(document.getElementById('gc-gems').value) || 0);
+  const gemsRaw = document.getElementById('gc-gems').value, fatesRaw = document.getElementById('gc-fates').value;
+  if (!(parseInt(gemsRaw) > 0) && !(parseInt(fatesRaw) > 0)) {
+    const fl = isW ? (g.fateNameW || g.fateName) : g.fateName;
+    resEl.innerHTML = `<div class="gc-result">
+      <div class="gc-head gc-guide">
+        <img src="gacha-0.webp" onerror="this.style.display='none'">
+        <div style="flex:1;min-width:0;">
+          <p class="gc-head-k">오, 뽑기 상담이야?</p>
+          <p class="gc-head-msg">갖고 있는 재화랑 지금 스택만 알려줘. 숫자만 주면 계산은 내가 해줄게, 헤헤. 상담료는… 이번엔 공짜로 해줄게.</p>
+        </div>
+      </div>
+      <ol class="gc-steps">
+        <li><b>보유 재화</b>를 입력해 줘. ${josa(g.currency, '과', '와')} ${fl} 개수.</li>
+        <li><b>현재 스택</b>은 게임의 <b>${GC_LOG[gcGame]}</b>에서 마지막 5성 이후 몇 번 뽑았는지 세면 돼. (0~${cfg.hard - 1})</li>
+        <li>${cfg.win >= 1 ? '<b>목표 ' + (isW ? '재련' : '돌파') + '</b>만 고르면 끝!' : `<b>목표 ${isW ? '재련' : '돌파'}</b>${isW ? '이랑' : '랑'} <b>천장 상태</b>도 골라 줘. 직전 5성이 픽업이 아니었으면 ${gcGame === 'genshin' && isW ? '운명 포인트 1' : '확천장'}이야.`}</li>
+      </ol>
+    </div>`;
+    return;
+  }
+  const gems = Math.max(0, parseInt(gemsRaw) || 0);
   const fates = Math.max(0, parseInt(document.getElementById('gc-fates').value) || 0);
   const cop = gcGetSeg('gc-cop'), n = isW ? +cop.slice(1) : +cop.slice(1) + 1;
   const avail = Math.floor(gems / g.gpp) + fates;
