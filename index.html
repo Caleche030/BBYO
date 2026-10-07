@@ -351,7 +351,7 @@
   .gc-curve-dot { position:absolute; width:10px; height:10px; border-radius:50%; transform:translate(-50%, -50%); box-shadow:0 0 0 2px var(--bg); }
   .gc-curve-tag { position:absolute; top:-20px; font-size:11px; font-weight:700; white-space:nowrap; padding:0 4px; }
   .gc-curve-x { position:absolute; bottom:-18px; transform:translateX(-50%); font-size:10px; color:var(--text3); white-space:nowrap; }
-  .gc-curve-x:last-of-type { transform:translateX(-100%); }
+  .gc-curve-x:last-of-type { transform:translateX(-100%); }
   .gc-curve-y { position:absolute; left:2px; transform:translateY(-110%); font-size:10px; color:var(--text3); }
   .gc-needs { display:flex; gap:8px; flex-wrap:wrap; }
   .gc-need { flex:1; min-width:150px; background:#FCEBEB; border-radius:var(--radius); padding:11px 13px; }
@@ -364,6 +364,9 @@
   @media (max-width: 600px) {
     .gc-head { padding:14px; gap:12px; }
     .gc-head img { width:56px; height:56px; }
+    .gc-head { flex-wrap:wrap; }
+    .gc-head-k { font-size:17px; }
+    .gc-head-pct { width:100%; text-align:left; display:flex; align-items:baseline; gap:8px; padding-left:68px; }
     .gc-head-pct b { font-size:30px; }
     .gc-sec, .gc-avail, .gc-note { padding-left:14px; padding-right:14px; }
   }
@@ -1232,11 +1235,11 @@ const GC_CFG = {
 const GC_ORDER = ['genshin', 'starrail', 'wuwa'];
 const GC_TRUCK = { gems: 8080, won: 119000 };   // 6480+1600 상품 (세 게임 동일)
 const GC_ST = [  // 보유 재화로 "지금 들어가면" 성공할 확률 기준 판정. 메시지는 야호다 말투
-  { min:90, k:'거의 확정',     sc:'#3B6D11', sb:'#EAF3DE', img:'gacha-1.webp', msg:'이건 거의 받은 거나 마찬가지야. 헤헤, 들어가서 쓸어 담아 와!' },
-  { min:70, k:'할만한데?',     sc:'#0F6E56', sb:'#E1F5EE', img:'gacha-2.webp', msg:'꽤 짭짤한 확률인데? 운이 아주 꼬이지만 않으면 데려올 수 있을 거야. …아마도.' },
-  { min:45, k:'반반 승부',     sc:'#7A6A00', sb:'#FBF3D5', img:'gacha-2.webp', msg:'음… 딱 반반이야. 될 수도, 안 될 수도. 해볼 거면 말리진 않을게. 대신 결과는 책임 못 져~' },
-  { min:20, k:'쓰읍 이건 좀',  sc:'#854F0B', sb:'#FAEEDA', img:'gacha-3.webp', msg:'쓰읍… 못 먹을 쪽이 더 커. 원하는 걸 얻으려면 그만한 대가가 필요하거든. 조금만 더 모아 오자.' },
-  { min:0,  k:'다시 생각해봐', sc:'#A32D2D', sb:'#FCEBEB', img:'gacha-4.webp', msg:'우왁, 이건 좀 아니다. 이대로 들어가면 빈털터리 돼… 빚까지 져가며 뽑는 건 내가 말릴 거야!' },
+  { min:90, k:'이거 실패하면 운이 없는 거지!',     sc:'#3B6D11', sb:'#EAF3DE', img:'gacha-1.webp', msg:'이건 거의 받은 거나 마찬가지야. 헤헤, 들어가서 쓸어 담아 와!' },
+  { min:70, k:'이 정도면 충분하지!',     sc:'#0F6E56', sb:'#E1F5EE', img:'gacha-2.webp', msg:'꽤 짭짤한 확률인데? 운이 아주 꼬이지만 않으면 데려올 수 있을 거야. …아마도.' },
+  { min:45, k:'기도할 시간이야',     sc:'#7A6A00', sb:'#FBF3D5', img:'gacha-2.webp', msg:'음… 딱 반반이야. 될 수도, 안 될 수도. 해볼 거면 말리진 않을게. 대신 결과는 책임 못 져~' },
+  { min:20, k:'솔직히 모자란 거 알지?',  sc:'#854F0B', sb:'#FAEEDA', img:'gacha-3.webp', msg:'쓰읍… 못 먹을 쪽이 더 커. 원하는 걸 얻으려면 그만한 대가가 필요하거든. 조금만 더 모아 오자.' },
+  { min:0,  k:'도박하는 거야?', sc:'#A32D2D', sb:'#FCEBEB', img:'gacha-4.webp', msg:'우왁, 이건 좀 아니다. 이대로 들어가면 빈털터리 돼… 빚까지 져가며 뽑는 건 내가 말릴 거야!' },
 ];
 // 받침 유무로 조사 고르기: josa('원석','과','와') → '원석과'
 function josa(w, a, b) { const c = w.charCodeAt(w.length - 1) - 0xAC00; return w + (c >= 0 && c <= 11171 && c % 28 ? a : b); }
@@ -1474,7 +1477,7 @@ window.gcDoCalc = function() {
       <span class="gc-curve-y" style="top:50%;">50%</span><span class="gc-curve-y" style="top:10%;">90%</span>
       <span class="gc-curve-dot" style="left:${axPct}%;top:${(1 - ay) * 100}%;background:${S.sc};"></span>
       <span class="gc-curve-tag" style="left:${axPct}%;color:${S.sc};${axPct > 75 ? 'transform:translateX(-100%);' : ''}">보유 ${avail}뽑 · ${gcPct(ay)}%</span>
-      ${mk(q(0.5), `${q(0.5)}`)}${(xMax - q(0.9)) / xMax > 0.12 ? mk(q(0.9), `${q(0.9)}`) : ''}${mk(xMax, `천장 ${worst}`)}
+      ${mk(q(0.5), `${q(0.5)}`)}${(xMax - q(0.9)) / xMax > (window.innerWidth < 640 ? 0.2 : 0.1) ? mk(q(0.9), `${q(0.9)}`) : ''}${mk(xMax, `천장 ${worst}`)}
     </div>`;
 
   // ── 더 모은다면 ──
