@@ -484,15 +484,26 @@ const GAME_ORDER = ['원신', '스타레일', '명조'];
 const SHEET_GAME_ALIAS = { '붕스': '스타레일' };
 
 // 복각 계산 특수 처리 캐릭터
+// 아래 캐릭터는 복각 대상이 아니다. 검색하면 해당 목록 전체를 초상화로 보여주고, 복각 순위에서도 뺀다.
 // standard = 상시 캐릭터 전체(반천장에서 지면 나오는 캐릭터. 픽업됐다가 편입된 캐릭터, 이례적으로 픽업된 각청 포함)
-// pickable = 선택 배너로 이동, free = 무료 지급
+// pickable = 스타레일 '별빛 인연의 초대'(픽뚫 목록)에 추가된 캐릭터 (기존 상시 7명 + 이 목록에서 지정)
+// shop = 스타레일 금빛 영혼 상점에서 교환 가능한 캐릭터
+// free = 무료 지급, notes = 검색 결과에 붙는 캐릭터별 설명
 const SPECIAL_CHARS = {
   '원신': {
     standard: ['다이루크', '진', '모나', '치치', '각청', '타이나리', '데히야', '유메미즈키 미즈키'],
+    notes: {
+      '각청': '상시 캐릭터인데 이례적으로 1.3버전에 픽업된 적이 있어요.',
+      '치치': '6.7 후반 귀환 기원 묶음 배너에 상시 포지션(꽝)으로 들어간 적이 있어요.',
+      '유메미즈키 미즈키': '5.4 픽업 후 상시로 편입됐어요. 6.7 후반 귀환 기원 묶음 배너에는 상시 포지션(꽝)으로 들어갔어요.',
+      '타이나리': '픽업 캐릭터였다가 상시로 편입됐어요.',
+      '데히야': '픽업 캐릭터였다가 상시로 편입됐어요.',
+    },
   },
   '스타레일': {
     standard: ['히메코', '웰트', '브로냐', '게파드', '클라라', '백로', '연경'],
-    pickable: ['은랑', '제레', '블레이드', '아젠티', '운리', '부현'],
+    pickable: ['제레', '블레이드', '부현', '운리', '은랑', '아젠티'],
+    shop: ['완·매', '나찰', '토파즈&복순이', '곽향', '로빈'],
   },
   '명조': {
     standard: ['카카루', '앙코', '감심', '능양', '벨리나'],
@@ -790,11 +801,13 @@ function estimateRerun(gameData, lastIdx, gameName) {
 function calcRerun(gameData, q, gameName) {
   q = q.trim();
   if (!q) return { type: 'empty' };
-  const spec = SPECIAL_CHARS[gameName] || {}, std = spec.standard || [];
-  const chars = allChars(gameData), keys = [...new Set([...Object.keys(chars), ...std])];
+  const spec = SPECIAL_CHARS[gameName] || {};
+  const chars = allChars(gameData);
+  const keys = [...new Set([...Object.keys(chars), ...POOL_KINDS.flatMap(k => spec[k] || [])])];
   const exact = keys.find(k => k === q);
-  if (exact && std.includes(exact))   // 상시 캐릭터: 복각 대상이 아니므로 상시 목록을 보여줌
-    return { type: 'standard', name: exact, hist: rerunHistory(gameData, exact), pool: std };
+  const kind = exact && POOL_KINDS.find(k => spec[k]?.includes(exact));
+  if (kind)   // 상시·픽뚫 목록·상점 캐릭터: 복각 대상이 아니므로 해당 목록을 보여줌
+    return { type: 'pool', kind, name: exact, hist: rerunHistory(gameData, exact) };
   if (exact) {
     const hist = rerunHistory(gameData, exact);
     const done = hist.filter(h => h.st !== 'future');
@@ -808,7 +821,6 @@ function calcRerun(gameData, q, gameName) {
     const curIdx = gameData.reduce((m, v, i) => (pd(v.s) && pd(v.s) <= TODAY ? i : m), -1);
     return {
       type: 'found', name: exact, hist, now, next, last,
-      retired: spec.pickable?.includes(exact) ? 'pickable' : null,
       rerunCount: done.filter(h => h.type === '복각').length,
       avgGap: gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null,
       waitVers: last ? curIdx - last.idx : 0,
@@ -832,31 +844,45 @@ function histChips(hist) {
   }).join('');
 }
 
-// 상시 캐릭터 검색 결과: 상시 캐릭터 전체 초상화 + 안내
-function renderStandard(res, gameName) {
-  const c = GAME_CONFIG[gameName];
-  const picked = res.hist.filter(h => h.st !== 'future');
-  const pool = res.pool.map(n => `<span class="rs-item${n === res.name ? ' on' : ''}" onclick="fillC('${n}','${gameName}')">
+// 복각 대상이 아닌 캐릭터 분류 (SPECIAL_CHARS 키). list = 검색 결과에 보여줄 목록
+const POOL_KINDS = ['standard', 'pickable', 'shop'];
+const POOL_INFO = {
+  standard: { status: '상시 캐릭터', msg: '해당 캐릭터는 상시 캐릭터입니다.',
+    why: '픽업 배너에서 반천장을 놓치면 나오는 캐릭터라 복각을 기다릴 필요가 없어요.',
+    title: '상시 캐릭터', list: s => s.standard },
+  pickable: { status: '별빛 인연의 초대 편입', msg: '해당 캐릭터는 별빛 인연의 초대(픽뚫 목록)에 추가된 캐릭터입니다.',
+    why: '메인 뽑기에서 픽업을 놓쳤을 때 나올 캐릭터로 직접 지정할 수 있어서 복각할 일이 없어요.',
+    title: '별빛 인연의 초대 목록', list: s => [...(s.standard || []), ...s.pickable] },
+  shop: { status: '금빛 영혼 상점 편입', msg: '해당 캐릭터는 금빛 영혼 상점에서 교환할 수 있는 캐릭터입니다.',
+    why: '6돌 이후 중복으로 얻는 은빛 영혼 2개를 금빛 영혼 1개로 바꿔 데려올 수 있어서 복각할 일이 없어요.',
+    title: '금빛 영혼 상점', list: s => s.shop },
+};
+
+// 상시·픽뚫 목록·상점 캐릭터 검색 결과: 해당 목록 전체 초상화 + 안내
+function renderPool(res, gameName) {
+  const c = GAME_CONFIG[gameName], spec = SPECIAL_CHARS[gameName] || {}, info = POOL_INFO[res.kind];
+  const list = info.list(spec), note = spec.notes?.[res.name];
+  const pool = list.map(n => `<span class="rs-item${n === res.name ? ' on' : ''}" onclick="fillC('${n}','${gameName}')">
       ${portraitBox(gameName, n, 64)}<span class="rs-name">${n}</span></span>`).join('');
   return `<div class="rr-card" style="--ga:${c.a};--gb:${c.b};--gm:${c.m};--gp:${c.p};">
     <div class="rr-main">
       <div class="rr-left">${portraitWithAttrs(gameName, res.name, 112)}<p class="rr-name">${res.name}</p></div>
       <div class="rr-right">
-        <p class="rr-status" style="color:var(--text2);">상시 캐릭터</p>
-        <p class="rr-sub">해당 캐릭터는 상시 캐릭터입니다.</p>
-        <p class="rr-compare">픽업 배너에서 반천장을 놓치면 나오는 캐릭터라 복각을 기다릴 필요가 없어요.</p>
-        ${picked.length ? `<p class="rr-compare">이례적으로 <b>${picked.map(h => h.v).join(', ')}</b>버전에 픽업된 적이 있어요.</p>` : ''}
+        <p class="rr-status" style="color:var(--text2);">${info.status}</p>
+        <p class="rr-sub">${info.msg}</p>
+        <p class="rr-compare">${info.why}</p>
+        ${note ? `<p class="rr-compare" style="color:var(--text);">${note}</p>` : ''}
       </div>
     </div>
-    <div class="rr-hist"><p class="rr-hist-t">${gameName} 상시 캐릭터 ${res.pool.length}명</p><div class="rs-grid">${pool}</div></div>
+    <div class="rr-hist"><p class="rr-hist-t">${gameName} ${info.title} ${list.length}명</p><div class="rs-grid">${pool}</div></div>
     ${res.hist.length ? `<div class="rr-hist" style="padding-top:0;"><p class="rr-hist-t">픽업 이력</p><div class="rr-chips">${histChips(res.hist)}</div></div>` : ''}
   </div>`;
 }
 
-// 복각 순위: 5성 픽업 캐릭터 중 (상시·선택 배너 제외) 가장 오래 미복각 / 가장 많이 복각
+// 복각 순위: 5성 픽업 캐릭터 중 (상시·픽뚫 목록·상점·무료 제외) 가장 오래 미복각 / 가장 많이 복각
 function rerunRanks(gameData, gameName) {
   const spec = SPECIAL_CHARS[gameName] || {};
-  const skip = new Set([...(spec.standard || []), ...(spec.pickable || []), ...(spec.free || [])]);
+  const skip = new Set([...POOL_KINDS, 'free'].flatMap(k => spec[k] || []));
   const curIdx = gameData.reduce((m, v, i) => (pd(v.s) && pd(v.s) <= TODAY ? i : m), -1);
   const rows = Object.keys(allChars(gameData)).filter(k => {
     if (skip.has(k) || k.includes('(4성)')) return false;
@@ -896,7 +922,7 @@ function renderRerunRanks(gameName) {
     ${col('가장 오래 복각 안 한 캐릭터', waiting, r => row(r, `${r.wait}버전째`, `마지막 ${r.last.v} ${r.last.half}`))}
     ${col('가장 많이 복각한 캐릭터', most, r => row(r, `${r.reruns}회`, r.now ? '지금 픽업 중' : `마지막 ${r.last.v} ${r.last.half}`))}
   </div>
-  <p class="rk-note">5성 픽업 캐릭터 기준 · 상시·선택 배너 캐릭터 제외 · 복각 예정이 잡힌 캐릭터는 '오래 복각 안 한' 순위에서 제외</p>`;
+  <p class="rk-note">5성 픽업 캐릭터 기준 · 상시·픽뚫 목록·상점 캐릭터 제외 · 복각 예정이 잡힌 캐릭터는 '오래 복각 안 한' 순위에서 제외</p>`;
 }
 
 function renderResult(res, gameName) {
@@ -906,17 +932,13 @@ function renderResult(res, gameName) {
     <p style="font-size:13px;color:#633806;">${res.type === 'typo' ? `"${res.q}"와 비슷한 이름을 찾았어요.` : `"${res.q}"로 여러 캐릭터가 검색됐어요.`}</p>
     <div class="sug-list">${res.suggests.map(s => `<button class="sug-btn" onclick="fillC('${s}','${gameName}')">${s}</button>`).join('')}</div>
   </div>`;
-  if (res.type === 'standard') return renderStandard(res, gameName);
+  if (res.type === 'pool') return renderPool(res, gameName);
   if (res.type !== 'found') return `<div class="result-box r-none"><p style="font-size:13px;color:var(--text2);">"${res.q}"를 찾을 수 없어요.</p><p style="font-size:12px;color:var(--text3);margin-top:4px;">시트에 등록된 이름으로 검색해주세요.</p></div>`;
 
   const dday = d => { const n = Math.ceil((d - TODAY) / 86400000); return n <= 0 ? '오늘' : `D-${n}`; };
   const vh = h => `${h.v} ${h.half}`;
   let status, sub = [], tone = c.a;
-  if (res.retired) {
-    status = '선택 배너로 이동';
-    sub.push('픽뚫(선택) 배너에서 고를 수 있어 개별 복각 배너는 없어요.');
-    tone = 'var(--text2)';
-  } else if (res.now) {
+  if (res.now) {
     status = `지금 픽업 중!`;
     sub.push(`${vh(res.now)} ${res.now.type} · 종료까지 ${dLeft(res.now.he)}일 (${fmt(res.now.he)})`);
   } else if (res.next) {
@@ -932,7 +954,7 @@ function renderResult(res, gameName) {
   }
   // 평균 간격과 비교
   let compare = '';
-  if (!res.retired && !res.now && !res.next && res.avgGap && res.last) {
+  if (!res.now && !res.next && res.avgGap && res.last) {
     const diff = res.waitVers - res.avgGap;
     compare = diff >= 1 ? `평균 간격보다 <b>${diff.toFixed(1)}버전 더</b> 기다리는 중`
       : diff <= -1 ? `평균 간격까지 <b>${(-diff).toFixed(1)}버전</b> 남음` : '딱 평균 간격쯤이에요';
@@ -940,7 +962,7 @@ function renderResult(res, gameName) {
 
   // 등장 이력 타임라인
   const chips = histChips(res.hist);
-  const tail = !res.retired && !res.now && !res.next && res.last
+  const tail = !res.now && !res.next && res.last
     ? `<span class="rr-gap">${res.waitVers}버전</span><span class="rr-chip rr-wait">지금 · 대기 중</span>` : '';
 
   const p = portraitInfo(gameName, res.name);
