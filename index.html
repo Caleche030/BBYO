@@ -879,6 +879,7 @@ function renderPool(res, gameName) {
   </div>`;
 }
 
+const RK_N = 10;   // 복각 순위 표시 인원
 // 복각 순위: 5성 픽업 캐릭터 중 (상시·픽뚫 목록·상점·무료 제외) 가장 오래 미복각 / 가장 많이 복각
 function rerunRanks(gameData, gameName) {
   const spec = SPECIAL_CHARS[gameName] || {};
@@ -896,11 +897,11 @@ function rerunRanks(gameData, gameName) {
       reruns: hist.filter(h => h.st !== 'future' && h.type === '복각').length,
       wait: last ? curIdx - last.idx : 0 };
   }).filter(r => r.last || r.now);
-  // 동률은 같은 순위. 3명까지 보여주고 3위 안 동률이 더 있으면 more
+  // 동률은 같은 순위. RK_N명까지 보여주고 RK_N위 안 동률이 더 있으면 more
   const top = (arr, val) => {
     const ranked = [];
     arr.forEach((r, i) => ranked.push({ ...r, rank: i && val(r) === val(arr[i - 1]) ? ranked[i - 1].rank : i + 1 }));
-    return { list: ranked.slice(0, 3), more: ranked.filter(r => r.rank <= 3).length - Math.min(3, ranked.length) };
+    return { list: ranked.slice(0, RK_N), more: ranked.filter(r => r.rank <= RK_N).length - Math.min(RK_N, ranked.length) };
   };
   const waiting = rows.filter(r => !r.now && !r.next && r.wait > 0)
     .sort((a, b) => b.wait - a.wait || a.last.idx - b.last.idx);
