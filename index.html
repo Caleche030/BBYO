@@ -289,7 +289,28 @@
   .rr-wait { background:var(--bg); border:1px solid var(--ga); color:var(--ga); font-weight:600; }
   .rr-gap { font-size:10px; color:var(--text3); }
   .rr-gap::before { content:'→ '; }
+  .rs-grid { display:flex; flex-wrap:wrap; gap:10px; }
+  .rs-item { display:flex; flex-direction:column; align-items:center; gap:4px; width:64px; cursor:pointer; opacity:.75; }
+  .rs-item:hover, .rs-item.on { opacity:1; }
+  .rs-item.on .pt-box { outline:2px solid var(--ga); outline-offset:1px; }
+  .rs-name { font-size:11px; color:var(--text2); text-align:center; line-height:1.25; word-break:keep-all; }
+  .rs-item.on .rs-name { color:var(--ga); font-weight:700; }
+  .rk-wrap { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:18px; }
+  .rk-col { border:0.5px solid var(--gm); border-radius:var(--radius-lg); padding:12px 14px; background:var(--bg); min-width:0; }
+  .rk-t { font-size:13px; font-weight:700; color:var(--ga); margin-bottom:6px; }
+  .rk-row { display:flex; align-items:center; gap:10px; padding:6px 4px; border-radius:var(--radius); cursor:pointer; }
+  .rk-row:hover { background:var(--gb); }
+  .rk-row + .rk-row { border-top:0.5px solid var(--border); }
+  .rk-no { width:16px; font-size:15px; font-weight:800; color:var(--ga); text-align:center; flex-shrink:0; }
+  .rk-row .pt-box { flex-shrink:0; }
+  .rk-txt { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .rk-txt b { font-size:13px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rk-txt span { font-size:11px; color:var(--text3); }
+  .rk-val { font-size:15px; font-weight:800; color:var(--text); white-space:nowrap; }
+  .rk-empty, .rk-more { font-size:11px; color:var(--text3); padding:4px; }
+  .rk-note { font-size:11px; color:var(--text3); margin-top:8px; }
   @media (max-width: 600px) {
+    .rk-wrap { grid-template-columns:1fr; }
     .rr-main { gap:12px; padding:14px; }
     .rr-left .pt-box { width:84px !important; height:84px !important; }
     .rr-status { font-size:19px; }
@@ -463,12 +484,19 @@ const GAME_ORDER = ['원신', '스타레일', '명조'];
 const SHEET_GAME_ALIAS = { '붕스': '스타레일' };
 
 // 복각 계산 특수 처리 캐릭터
+// standard = 상시 캐릭터 전체(반천장에서 지면 나오는 캐릭터. 픽업됐다가 편입된 캐릭터, 이례적으로 픽업된 각청 포함)
+// pickable = 선택 배너로 이동, free = 무료 지급
 const SPECIAL_CHARS = {
   '원신': {
-    standard: ['타이나리', '유메미즈키 미즈키', '데히야'],
+    standard: ['다이루크', '진', '모나', '치치', '각청', '타이나리', '데히야', '유메미즈키 미즈키'],
   },
   '스타레일': {
+    standard: ['히메코', '웰트', '브로냐', '게파드', '클라라', '백로', '연경'],
     pickable: ['은랑', '제레', '블레이드', '아젠티', '운리', '부현'],
+  },
+  '명조': {
+    standard: ['카카루', '앙코', '감심', '능양', '벨리나'],
+    free: ['방랑자·기류'],   // 무료 지급(픽업 배너 아님) → 복각 순위에서 제외
   },
 };
 
@@ -702,12 +730,19 @@ function lev(a, b) {
   return dp[m][n];
 }
 
+// 시트 이름 → 검색 키: ? 와 '(중반)'/'(후반)' 같은 시기 표기 제거, 같은 캐릭터의 다른 표기는 하나로
+const CHAR_ALIAS = { '토파즈': '토파즈&복순이' };
+function charKey(n) {
+  const k = n.replace(/\?/g, '').replace(/\((전반|중반|후반)\)/g, '').trim();
+  return CHAR_ALIAS[k] || k;
+}
+
 function allChars(gameData) {
   const map = {};
   gameData.forEach((v, idx) => {
     const proc = (k, half) => {
       sp(v[k]).forEach(name => {
-        const key = name.replace(/\?/g, '').trim();
+        const key = charKey(name);
         if (!key) return;
         const isRerun = k === 'fr' || k === 'hr';
         const info = { idx, v: v.v, s: v.s, e: v.e, half };
@@ -730,7 +765,7 @@ function rerunHistory(gameData, key) {
     const mid = addDays(s, 21);
     [['전반', s, mid, v.fn, v.fr], ['후반', mid, e, v.hn, v.hr]].forEach(([half, hs, he, fn, fr]) => {
       [['신규', fn], ['복각', fr]].forEach(([type, col]) => {
-        const hit = sp(col).find(n => n.replace(/\?/g, '').trim() === key);
+        const hit = sp(col).find(n => charKey(n) === key);
         if (!hit) return;
         const st = TODAY >= he ? 'past' : TODAY >= hs ? 'now' : 'future';
         hist.push({ idx, v: v.v, half, type, guess: hit.includes('?'), hs, he, st });
@@ -755,8 +790,11 @@ function estimateRerun(gameData, lastIdx, gameName) {
 function calcRerun(gameData, q, gameName) {
   q = q.trim();
   if (!q) return { type: 'empty' };
-  const chars = allChars(gameData), keys = Object.keys(chars);
+  const spec = SPECIAL_CHARS[gameName] || {}, std = spec.standard || [];
+  const chars = allChars(gameData), keys = [...new Set([...Object.keys(chars), ...std])];
   const exact = keys.find(k => k === q);
+  if (exact && std.includes(exact))   // 상시 캐릭터: 복각 대상이 아니므로 상시 목록을 보여줌
+    return { type: 'standard', name: exact, hist: rerunHistory(gameData, exact), pool: std };
   if (exact) {
     const hist = rerunHistory(gameData, exact);
     const done = hist.filter(h => h.st !== 'future');
@@ -768,10 +806,9 @@ function calcRerun(gameData, q, gameName) {
     const idxs = [...new Set(done.map(h => h.idx))];
     const gaps = idxs.slice(1).map((x, i) => x - idxs[i]);
     const curIdx = gameData.reduce((m, v, i) => (pd(v.s) && pd(v.s) <= TODAY ? i : m), -1);
-    const spec = SPECIAL_CHARS[gameName] || {};
     return {
       type: 'found', name: exact, hist, now, next, last,
-      retired: spec.standard?.includes(exact) ? 'standard' : spec.pickable?.includes(exact) ? 'pickable' : null,
+      retired: spec.pickable?.includes(exact) ? 'pickable' : null,
       rerunCount: done.filter(h => h.type === '복각').length,
       avgGap: gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null,
       waitVers: last ? curIdx - last.idx : 0,
@@ -787,6 +824,81 @@ function calcRerun(gameData, q, gameName) {
   return { type: 'none', q };
 }
 
+function histChips(hist) {
+  return hist.map((h, i) => {
+    const gap = i > 0 && h.idx !== hist[i - 1].idx ? `<span class="rr-gap">${h.idx - hist[i - 1].idx}버전</span>` : '';
+    const cls = h.st === 'future' ? 'rr-chip rr-future' : h.st === 'now' ? 'rr-chip rr-now' : 'rr-chip';
+    return `${gap}<span class="${cls}" title="${fmt(h.hs)}–${fmt(h.he)}"><b>${h.v}</b> ${h.half} · ${h.type}${h.guess ? '?' : ''}</span>`;
+  }).join('');
+}
+
+// 상시 캐릭터 검색 결과: 상시 캐릭터 전체 초상화 + 안내
+function renderStandard(res, gameName) {
+  const c = GAME_CONFIG[gameName];
+  const picked = res.hist.filter(h => h.st !== 'future');
+  const pool = res.pool.map(n => `<span class="rs-item${n === res.name ? ' on' : ''}" onclick="fillC('${n}','${gameName}')">
+      ${portraitBox(gameName, n, 64)}<span class="rs-name">${n}</span></span>`).join('');
+  return `<div class="rr-card" style="--ga:${c.a};--gb:${c.b};--gm:${c.m};--gp:${c.p};">
+    <div class="rr-main">
+      <div class="rr-left">${portraitWithAttrs(gameName, res.name, 112)}<p class="rr-name">${res.name}</p></div>
+      <div class="rr-right">
+        <p class="rr-status" style="color:var(--text2);">상시 캐릭터</p>
+        <p class="rr-sub">해당 캐릭터는 상시 캐릭터입니다.</p>
+        <p class="rr-compare">픽업 배너에서 반천장을 놓치면 나오는 캐릭터라 복각을 기다릴 필요가 없어요.</p>
+        ${picked.length ? `<p class="rr-compare">이례적으로 <b>${picked.map(h => h.v).join(', ')}</b>버전에 픽업된 적이 있어요.</p>` : ''}
+      </div>
+    </div>
+    <div class="rr-hist"><p class="rr-hist-t">${gameName} 상시 캐릭터 ${res.pool.length}명</p><div class="rs-grid">${pool}</div></div>
+    ${res.hist.length ? `<div class="rr-hist" style="padding-top:0;"><p class="rr-hist-t">픽업 이력</p><div class="rr-chips">${histChips(res.hist)}</div></div>` : ''}
+  </div>`;
+}
+
+// 복각 순위: 5성 픽업 캐릭터 중 (상시·선택 배너 제외) 가장 오래 미복각 / 가장 많이 복각
+function rerunRanks(gameData, gameName) {
+  const spec = SPECIAL_CHARS[gameName] || {};
+  const skip = new Set([...(spec.standard || []), ...(spec.pickable || []), ...(spec.free || [])]);
+  const curIdx = gameData.reduce((m, v, i) => (pd(v.s) && pd(v.s) <= TODAY ? i : m), -1);
+  const rows = Object.keys(allChars(gameData)).filter(k => {
+    if (skip.has(k) || k.includes('(4성)')) return false;
+    const p = portraitInfo(gameName, k);
+    return !p || p.r === 5;
+  }).map(k => {
+    const hist = rerunHistory(gameData, k);
+    const past = hist.filter(h => h.st === 'past'), last = past[past.length - 1];
+    const now = hist.some(h => h.st === 'now'), next = hist.some(h => h.st === 'future');
+    return { name: k, last, now, next,
+      reruns: hist.filter(h => h.st !== 'future' && h.type === '복각').length,
+      wait: last ? curIdx - last.idx : 0 };
+  }).filter(r => r.last || r.now);
+  // 동률은 같은 순위. 3명까지 보여주고 3위 안 동률이 더 있으면 more
+  const top = (arr, val) => {
+    const ranked = [];
+    arr.forEach((r, i) => ranked.push({ ...r, rank: i && val(r) === val(arr[i - 1]) ? ranked[i - 1].rank : i + 1 }));
+    return { list: ranked.slice(0, 3), more: ranked.filter(r => r.rank <= 3).length - Math.min(3, ranked.length) };
+  };
+  const waiting = rows.filter(r => !r.now && !r.next && r.wait > 0)
+    .sort((a, b) => b.wait - a.wait || a.last.idx - b.last.idx);
+  const most = [...rows].sort((a, b) => b.reruns - a.reruns || (b.last?.idx ?? 0) - (a.last?.idx ?? 0));
+  return { waiting: top(waiting, r => r.wait), most: top(most, r => r.reruns) };
+}
+
+function renderRerunRanks(gameName) {
+  const gd = GAMES[gameName];
+  if (!gd) return '';
+  const { waiting, most } = rerunRanks(gd, gameName);
+  const row = (r, val, sub) => `<div class="rk-row" onclick="fillC('${r.name}','${gameName}');document.getElementById('ci-${gameName}').scrollIntoView({block:'center',behavior:'smooth'})">
+      <span class="rk-no">${r.rank}</span>${portraitBox(gameName, r.name, 44)}
+      <span class="rk-txt"><b>${r.name}</b><span>${sub}</span></span><span class="rk-val">${val}</span></div>`;
+  const col = (title, t, fn) => `<div class="rk-col"><p class="rk-t">${title}</p>
+      ${t.list.length ? t.list.map(fn).join('') : '<p class="rk-empty">해당 없음</p>'}
+      ${t.more > 0 ? `<p class="rk-more">외 ${t.more}명 동률</p>` : ''}</div>`;
+  return `<div class="rk-wrap">
+    ${col('가장 오래 복각 안 한 캐릭터', waiting, r => row(r, `${r.wait}버전째`, `마지막 ${r.last.v} ${r.last.half}`))}
+    ${col('가장 많이 복각한 캐릭터', most, r => row(r, `${r.reruns}회`, r.now ? '지금 픽업 중' : `마지막 ${r.last.v} ${r.last.half}`))}
+  </div>
+  <p class="rk-note">5성 픽업 캐릭터 기준 · 상시·선택 배너 캐릭터 제외 · 복각 예정이 잡힌 캐릭터는 '오래 복각 안 한' 순위에서 제외</p>`;
+}
+
 function renderResult(res, gameName) {
   const c = GAME_CONFIG[gameName];
   if (res.type === 'empty') return `<div class="result-box r-none"><p style="font-size:13px;color:var(--text2);">캐릭터 이름을 입력해주세요.</p></div>`;
@@ -794,14 +906,15 @@ function renderResult(res, gameName) {
     <p style="font-size:13px;color:#633806;">${res.type === 'typo' ? `"${res.q}"와 비슷한 이름을 찾았어요.` : `"${res.q}"로 여러 캐릭터가 검색됐어요.`}</p>
     <div class="sug-list">${res.suggests.map(s => `<button class="sug-btn" onclick="fillC('${s}','${gameName}')">${s}</button>`).join('')}</div>
   </div>`;
+  if (res.type === 'standard') return renderStandard(res, gameName);
   if (res.type !== 'found') return `<div class="result-box r-none"><p style="font-size:13px;color:var(--text2);">"${res.q}"를 찾을 수 없어요.</p><p style="font-size:12px;color:var(--text3);margin-top:4px;">시트에 등록된 이름으로 검색해주세요.</p></div>`;
 
   const dday = d => { const n = Math.ceil((d - TODAY) / 86400000); return n <= 0 ? '오늘' : `D-${n}`; };
   const vh = h => `${h.v} ${h.half}`;
   let status, sub = [], tone = c.a;
   if (res.retired) {
-    status = res.retired === 'standard' ? '상시 배너 편입' : '선택 배너로 이동';
-    sub.push(res.retired === 'standard' ? '상시 배너에서 나오므로 개별 복각 배너는 없어요.' : '픽뚫(선택) 배너에서 고를 수 있어 개별 복각 배너는 없어요.');
+    status = '선택 배너로 이동';
+    sub.push('픽뚫(선택) 배너에서 고를 수 있어 개별 복각 배너는 없어요.');
     tone = 'var(--text2)';
   } else if (res.now) {
     status = `지금 픽업 중!`;
@@ -826,11 +939,7 @@ function renderResult(res, gameName) {
   }
 
   // 등장 이력 타임라인
-  const chips = res.hist.map((h, i) => {
-    const gap = i > 0 && h.idx !== res.hist[i - 1].idx ? `<span class="rr-gap">${h.idx - res.hist[i - 1].idx}버전</span>` : '';
-    const cls = h.st === 'future' ? 'rr-chip rr-future' : h.st === 'now' ? 'rr-chip rr-now' : 'rr-chip';
-    return `${gap}<span class="${cls}" title="${fmt(h.hs)}–${fmt(h.he)}"><b>${h.v}</b> ${h.half} · ${h.type}${h.guess ? '?' : ''}</span>`;
-  }).join('');
+  const chips = histChips(res.hist);
   const tail = !res.retired && !res.now && !res.next && res.last
     ? `<span class="rr-gap">${res.waitVers}버전</span><span class="rr-chip rr-wait">지금 · 대기 중</span>` : '';
 
@@ -950,6 +1059,7 @@ function renderRerunCalc(gameName) {
         <button class="calc-btn" onclick="rc('${gameName}')" style="background:${c.a};color:${c.b};">확인</button>
       </div>
       <div id="cr-${gameName}"></div>
+      ${renderRerunRanks(gameName)}
     </div>`;
 }
 
