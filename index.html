@@ -529,6 +529,7 @@ function pd(s) {
   return new Date(+y, +m - 1, +d);
 }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+function fmtY(d) { return d ? `${d.getFullYear()}.${fmt(d)}` : '?'; }  // 연도 포함 (전체 버전 타임라인용)
 function fmt(d) { if (!d) return '?'; return `${d.getMonth()+1}/${String(d.getDate()).padStart(2,'0')}`; }
 function dLeft(d) { return Math.max(0, Math.ceil((d - TODAY) / 86400000)); }
 function sp(s) { return s ? s.split(/[\/,]/).map(n => n.trim()).filter(Boolean) : []; }
@@ -720,7 +721,7 @@ function tlCard(v, gameName) {
       <div class="tl-top">
         <div>
           <span class="tl-ver" style="color:${verClr};">${v.v}버전</span>
-          <span class="tl-dates">(${fmt(s)} – ${fmt(e)})</span>
+          <span class="tl-dates">(${fmtY(s)} – ${e && s && e.getFullYear() === s.getFullYear() ? fmt(e) : fmtY(e)})</span>
         </div>
         ${isCur ? `<span class="tl-badge" style="background:${c.a};color:${c.b};">진행 중</span>` : ''}
         ${isFut ? `<span class="tl-badge" style="background:var(--bg3);color:var(--text2);">예정</span>` : ''}
