@@ -447,9 +447,28 @@
   .sc-viewport.grabbing { cursor: grabbing; }
   .sc-track   { position: absolute; top: 0; left: 0; will-change: transform; }
   .sc-bar-row { position: relative; height: 44px; border-bottom: 0.5px solid var(--border); }
-  .sc-bar     { position: absolute; top: 7px; bottom: 7px; border-radius: 4px; display: flex; align-items: center; padding: 0 7px; font-size: 10px; white-space: nowrap; overflow: hidden; transition: box-shadow 0.1s; }
+  .sc-bar     { position: absolute; top: 7px; bottom: 7px; border-radius: 4px; display: flex; align-items: center; padding: 0 7px; font-size: 10px; white-space: nowrap; overflow: hidden; transition: box-shadow 0.1s, opacity 0.1s; cursor: pointer; }
+  .sc-bl      { display: inline-block; }
+  .sc-bar.sel { box-shadow: 0 0 0 2px var(--sel); }
+  .sc-bar.ov  { box-shadow: 0 0 0 1.5px var(--sel); }
+  .sc-bar.dim { opacity: 0.35; }
+  .sc-band    { position: absolute; top: 0; bottom: 0; opacity: 0.1; display: none; pointer-events: none; }
   .sc-ruler   { position: relative; height: 60px; border-top: 0.5px solid var(--border2); }
   .sc-redline { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #e53e3e; pointer-events: none; z-index: 10; transform: translateX(-50%); }
+  .sc-rm { position: absolute; top: 4px; padding-left: 4px; font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap; pointer-events: none; }
+  .sc-rt { position: absolute; bottom: 0; width: 1px; background: var(--border2); pointer-events: none; }
+  .sc-rt.m { background: var(--text2); }
+  .sc-rd { position: absolute; bottom: 12px; text-align: center; font-size: 9px; color: var(--text3); pointer-events: none; }
+  .sc-sel { border-top: 0.5px solid var(--border); padding: 10px 12px; font-size: 12px; }
+  .sc-sel-hint { color: var(--text3); font-size: 11px; }
+  .sc-sel-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .sc-sel-date { color: var(--text2); font-size: 11px; }
+  .sc-sel-x { border: none; background: none; cursor: pointer; color: var(--text3); font-size: 13px; padding: 2px 6px; font-family: inherit; }
+  .sc-sel-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .sc-sel-g { width: 52px; flex-shrink: 0; font-size: 11px; font-weight: 600; }
+  .sc-sel-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .sc-chip { border: none; border-radius: 4px; padding: 3px 8px; font-size: 11px; font-family: inherit; cursor: pointer; }
+  .sc-chip span { font-size: 10px; opacity: 0.75; }
 </style>
 </head>
 <body>
@@ -993,10 +1012,7 @@ let GAMES = {};
 let curTab = 'main';
 
 function renderMain() {
-  if (!scPageStart) {
-    scPageStart = new Date(TODAY);
-    scPageStart.setDate(scPageStart.getDate() - 42);
-  }
+  scRange();
   const today = TODAY;
   const dateStr = `${today.getMonth()+1}월 ${today.getDate()}일`;
   const cards = GAME_ORDER
@@ -1027,6 +1043,7 @@ function renderMain() {
           <div class="sc-redline"></div>
         </div>
       </div>
+      <div class="sc-sel" id="sc-sel"></div>
     </div>
     <p class="section-label">오늘(${dateStr}) 기준 진행 중인 버전</p>
     <div class="main-grid">${cards}</div>
@@ -1709,27 +1726,64 @@ window.gcDoCalc = function() {
 };
 
 // ── 비교 탭 스크러버 ──────────────────────────────────
+// 모든 버전을 한 트랙에 미리 그려 두고(구간 잘림 없음), 드래그는 translateX로만 이동.
+// 날짜 칸 = [시작 경계, 다음 경계). 눈금은 경계에, 날짜 숫자는 칸 가운데, 빨간 선이 들어 있는 칸이 기준 날짜.
 const PX_DAY = 28;
-const PAGE_DAYS = 84;
-let scPageStart = null;
+const SC_JUMP = 84;          // 이전/다음 버튼 이동 일수(12주)
+let scStart = null;          // 트랙 첫날(가장 이른 버전의 달 1일)
+let scDays = 0;              // 트랙 전체 일수
 let scTX = 0;
 let scDragHandlers = null;
+let scSel = null;            // 선택한 버전 { g, i }
 
 function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
 
-function scGetDate() {
+function scRange() {
+  let mn = new Date(TODAY), mx = new Date(TODAY);
+  GAME_ORDER.forEach(n => (GAMES[n] || []).forEach(v => {
+    const s = pd(v.s), e = pd(v.e);
+    if (s && s < mn) mn = s;
+    if (e && e > mx) mx = e;
+  }));
+  scStart = new Date(mn.getFullYear(), mn.getMonth(), 1);
+  scDays = daysBetween(scStart, new Date(mx.getFullYear(), mx.getMonth() + 2, 1));
+}
+
+function scVW() {
   const vp = document.getElementById('sc-vp');
-  if (!vp) return new Date(TODAY);
-  const W = vp.getBoundingClientRect().width;
-  const idx = (W / 2 - scTX) / PX_DAY;
-  const d = new Date(scPageStart);
-  d.setDate(d.getDate() + Math.round(idx));
+  return vp ? vp.getBoundingClientRect().width : 800;
+}
+
+function scClamp(tx) {
+  const W = scVW();
+  return Math.min(W / 2, Math.max(W / 2 - scDays * PX_DAY + 1, tx));
+}
+
+function scGetDate() {
+  const idx = Math.max(0, Math.min(scDays - 1, Math.floor((scVW() / 2 - scTX) / PX_DAY)));
+  const d = new Date(scStart);
+  d.setDate(d.getDate() + idx);
   return d;
+}
+
+// 기준 날짜 칸 가운데에 빨간 선이 오도록
+function scCenterOn(date) {
+  scTX = scClamp(scVW() / 2 - (daysBetween(scStart, date) + 0.5) * PX_DAY);
+  scApply(); scUpdateDate();
 }
 
 function scApply() {
   const track = document.getElementById('sc-track');
   if (track) track.style.transform = `translateX(${Math.round(scTX)}px)`;
+  // 화면 왼쪽에 걸린 긴 막대도 버전 번호가 보이도록 라벨을 따라 이동
+  const viewL = -scTX;
+  document.querySelectorAll('#sc-track .sc-bar').forEach(bar => {
+    const l = bar.offsetLeft, w = bar.offsetWidth;
+    const lbl = bar.firstElementChild;
+    if (!lbl) return;
+    const off = Math.max(0, Math.min(w - lbl.offsetWidth - 14, viewL - l));
+    lbl.style.transform = off > 0 ? `translateX(${Math.round(off)}px)` : '';
+  });
 }
 
 function scUpdateDate() {
@@ -1742,80 +1796,121 @@ function scUpdateDate() {
       if (!bar) return;
       const s = pd(v.s), e = pd(v.e);
       const c = GAME_CONFIG[name];
-      if (s && e && d >= s && d < e) {
-        bar.style.background = c.a; bar.style.color = c.b;
-        bar.style.fontWeight = '600'; bar.style.boxShadow = `0 0 0 1.5px ${c.a}`;
-      } else {
-        bar.style.background = c.b; bar.style.color = c.p;
-        bar.style.fontWeight = '400'; bar.style.boxShadow = 'none';
-      }
+      const on = s && e && d >= s && d < e;
+      bar.style.background = on ? c.a : c.b;
+      bar.style.color = on ? c.b : c.p;
+      bar.style.fontWeight = on ? '600' : '400';
     });
   });
 }
 
 function buildScrubBarsHTML(name) {
   const c = GAME_CONFIG[name];
-  const vs = GAMES[name] || [];
-  const pageEnd = new Date(scPageStart);
-  pageEnd.setDate(pageEnd.getDate() + PAGE_DAYS);
-  return vs.map((v, i) => {
+  return (GAMES[name] || []).map((v, i) => {
     const s = pd(v.s), e = pd(v.e);
-    if (!s || !e || e <= scPageStart || s >= pageEnd) return '';
-    const ld = Math.max(0, daysBetween(scPageStart, s));
-    const rd = Math.min(PAGE_DAYS, daysBetween(scPageStart, e));
-    const left = ld * PX_DAY, width = Math.max(4, (rd - ld) * PX_DAY);
-    const isNow = TODAY >= s && TODAY < e;
+    if (!s || !e) return '';
+    const left = daysBetween(scStart, s) * PX_DAY;
+    const width = Math.max(4, daysBetween(s, e) * PX_DAY - 2);
     return `<div class="sc-bar" id="scb-${name}-${i}" data-game="${name}" data-idx="${i}"
-      style="left:${left}px;width:${width}px;background:${isNow?c.a:c.b};color:${isNow?c.b:c.p};font-weight:${isNow?600:400};${isNow?`box-shadow:0 0 0 1.5px ${c.a};`:''}"
-      >${v.v}</div>`;
+      style="left:${left}px;width:${width}px;background:${c.b};color:${c.p};--sel:${c.a};"><span class="sc-bl">${v.v}</span></div>`;
   }).join('');
 }
 
 function buildRulerHTML() {
   let html = '';
-  let prevMonth = -1, prevYear = -1;
-  for (let i = 0; i < PAGE_DAYS; i++) {
-    const d = new Date(scPageStart);
+  const W = scDays * PX_DAY;
+  for (let i = 0; i < scDays; i++) {
+    const d = new Date(scStart);
     d.setDate(d.getDate() + i);
     const x = i * PX_DAY;
-    const day = d.getDate(), month = d.getMonth(), year = d.getFullYear();
-    const isNewMonth = month !== prevMonth;
-    const isMon = d.getDay() === 1;
-    if (isNewMonth) {
-      const yPart = year !== prevYear ? `${year}년 ` : '';
-      html += `<div style="position:absolute;left:${x+3}px;top:4px;font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;pointer-events:none;">${yPart}${month+1}월</div>`;
-      prevMonth = month; prevYear = year;
+    const day = d.getDate();
+    const isMonth = day === 1, isMon = d.getDay() === 1;
+    if (isMonth) {
+      html += `<div class="sc-rm" style="left:${x}px;">${d.getFullYear()}년 ${d.getMonth()+1}월</div>`;
     }
-    const tickH = isNewMonth ? 20 : isMon ? 12 : 6;
-    const tickC = isNewMonth ? 'var(--text2)' : 'var(--border2)';
-    html += `<div style="position:absolute;left:${x+PX_DAY/2}px;bottom:0;width:1px;height:${tickH}px;background:${tickC};pointer-events:none;"></div>`;
-    if (isNewMonth || isMon || day % 5 === 0) {
-      const lc = isNewMonth ? 'var(--text)' : 'var(--text3)';
-      const fw = isNewMonth ? '600' : '400';
-      html += `<div style="position:absolute;left:${x}px;bottom:${tickH+2}px;width:${PX_DAY}px;text-align:center;font-size:9px;color:${lc};font-weight:${fw};pointer-events:none;">${day}</div>`;
+    const tickH = isMonth ? 26 : isMon ? 10 : 5;
+    html += `<div class="sc-rt${isMonth ? ' m' : ''}" style="left:${x}px;height:${tickH}px;"></div>`;
+    if (day % 5 === 0 && day <= 25) {
+      html += `<div class="sc-rd" style="left:${x}px;width:${PX_DAY}px;">${day}</div>`;
     }
   }
-  return `<div class="sc-ruler" style="width:${PAGE_DAYS*PX_DAY}px;">${html}</div>`;
+  return `<div class="sc-ruler" style="width:${W}px;">${html}</div>`;
 }
 
 function buildScrubTrackHTML() {
-  const trackW = PAGE_DAYS * PX_DAY;
+  const trackW = scDays * PX_DAY;
   const rows = GAME_ORDER.filter(n => GAMES[n]).map(name =>
     `<div class="sc-bar-row" style="width:${trackW}px;">${buildScrubBarsHTML(name)}</div>`
   ).join('');
-  return rows + buildRulerHTML();
+  return `<div class="sc-band" id="sc-band"></div>` + rows + buildRulerHTML();
 }
 
+// ── 버전 선택: 같은 기간에 걸친 다른 게임 버전 ──
+function scOverlaps(g, i) {
+  const v = (GAMES[g] || [])[i];
+  const s = v && pd(v.s), e = v && pd(v.e);
+  if (!s || !e) return null;
+  const out = {};
+  GAME_ORDER.filter(n => n !== g && GAMES[n]).forEach(n => {
+    out[n] = [];
+    GAMES[n].forEach((w, j) => {
+      const ws = pd(w.s), we = pd(w.e);
+      if (ws && we && ws < e && we > s) out[n].push(j);
+    });
+  });
+  return { v, s, e, out };
+}
+
+function scSelHTML() {
+  const md = d => `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  const ymd = d => `${d.getFullYear()}/${md(d)}`;
+  if (!scSel) return `<span class="sc-sel-hint">버전 막대를 누르면 같은 기간에 진행된 다른 게임 버전을 보여줘요</span>`;
+  const o = scOverlaps(scSel.g, scSel.i);
+  if (!o) return '';
+  const c = GAME_CONFIG[scSel.g];
+  const rows = Object.entries(o.out).map(([n, js]) => {
+    const gc = GAME_CONFIG[n];
+    const chips = js.length ? js.map(j => {
+      const w = GAMES[n][j], ws = pd(w.s), we = pd(w.e);
+      return `<button class="sc-chip" style="background:${gc.b};color:${gc.p};" onclick="scSelect('${n}',${j},true)"><b>${w.v}</b> <span>${md(ws)}~${md(we)}</span></button>`;
+    }).join('') : `<span class="sc-sel-hint">없음</span>`;
+    return `<div class="sc-sel-row"><span class="sc-sel-g" style="color:${gc.a};">${n}</span><div class="sc-sel-chips">${chips}</div></div>`;
+  }).join('');
+  return `<div class="sc-sel-top"><span><b style="color:${c.a};">${scSel.g} ${o.v.v}버전</b> <span class="sc-sel-date">${ymd(o.s)} ~ ${ymd(o.e)}</span> 동안</span>
+      <button class="sc-sel-x" onclick="scSelect(null)" aria-label="선택 해제">✕</button></div>${rows}`;
+}
+
+function scApplySel() {
+  const box = document.getElementById('sc-sel');
+  if (box) box.innerHTML = scSelHTML();
+  const band = document.getElementById('sc-band');
+  const o = scSel && scOverlaps(scSel.g, scSel.i);
+  document.querySelectorAll('#sc-track .sc-bar').forEach(bar => {
+    bar.classList.remove('sel', 'ov', 'dim');
+    if (!o) return;
+    const g = bar.dataset.game, i = +bar.dataset.idx;
+    if (g === scSel.g && i === scSel.i) bar.classList.add('sel');
+    else if (g !== scSel.g && o.out[g] && o.out[g].includes(i)) bar.classList.add('ov');
+    else bar.classList.add('dim');
+  });
+  if (!band) return;
+  if (!o) { band.style.display = 'none'; return; }
+  band.style.display = 'block';
+  band.style.left = daysBetween(scStart, o.s) * PX_DAY + 'px';
+  band.style.width = daysBetween(o.s, o.e) * PX_DAY + 'px';
+  band.style.background = GAME_CONFIG[scSel.g].a;
+}
+
+// center = true면 선택한 버전 시작일로 이동(칩에서 고를 때)
+window.scSelect = function(g, i, center) {
+  scSel = g == null || (scSel && scSel.g === g && scSel.i === i) ? null : { g, i };
+  scApplySel();
+  if (scSel && center) scCenterOn(pd(GAMES[g][i].s));
+};
 
 function scInitPos() {
-  const vp = document.getElementById('sc-vp');
-  if (!vp) return;
-  const W = vp.getBoundingClientRect().width;
-  const off = daysBetween(scPageStart, TODAY);
-  const clamped = Math.max(0, Math.min(PAGE_DAYS - 1, off));
-  scTX = W / 2 - clamped * PX_DAY;
-  scApply();
-  scUpdateDate();
+  scCenterOn(TODAY);
+  scApplySel();
 }
 
 function initScrubDrag() {
@@ -1825,41 +1920,32 @@ function initScrubDrag() {
     window.removeEventListener('mousemove', scDragHandlers.move);
     window.removeEventListener('mouseup', scDragHandlers.end);
   }
-  let dragging = false, startX = 0, startTX = 0;
-  const onStart = x => { dragging = true; startX = x; startTX = scTX; vp.classList.add('grabbing'); };
+  let dragging = false, moved = false, startX = 0, startTX = 0, downBar = null;
+  const onStart = (x, target) => {
+    dragging = true; moved = false; startX = x; startTX = scTX;
+    downBar = target.closest ? target.closest('[data-game]') : null;
+    vp.classList.add('grabbing');
+  };
   const onMove = x => {
     if (!dragging) return;
-    const vpEl = document.getElementById('sc-vp');
-    const W = vpEl ? vpEl.getBoundingClientRect().width : 800;
-    let proposed = startTX + (x - startX);
-    let needsRebuild = false;
-    while (proposed > W / 2) {
-      scPageStart = new Date(scPageStart);
-      scPageStart.setDate(scPageStart.getDate() - PAGE_DAYS);
-      proposed -= PAGE_DAYS * PX_DAY;
-      startTX -= PAGE_DAYS * PX_DAY;
-      needsRebuild = true;
-    }
-    while (proposed < W / 2 - PAGE_DAYS * PX_DAY) {
-      scPageStart = new Date(scPageStart);
-      scPageStart.setDate(scPageStart.getDate() + PAGE_DAYS);
-      proposed += PAGE_DAYS * PX_DAY;
-      startTX += PAGE_DAYS * PX_DAY;
-      needsRebuild = true;
-    }
-    if (needsRebuild) {
-      const track = document.getElementById('sc-track');
-      if (track) track.innerHTML = buildScrubTrackHTML();
-    }
-    scTX = proposed;
+    if (Math.abs(x - startX) > 4) moved = true;
+    scTX = scClamp(startTX + (x - startX));
     scApply(); scUpdateDate();
   };
-  const onEnd = () => { dragging = false; vp.classList.remove('grabbing'); };
+  const onEnd = () => {
+    if (!dragging) return;
+    dragging = false; vp.classList.remove('grabbing');
+    if (!moved) {
+      // 클릭(탭): 막대면 선택 토글, 빈 곳이면 해제
+      if (downBar) scSelect(downBar.dataset.game, +downBar.dataset.idx);
+      else if (scSel) scSelect(null);
+    }
+  };
   scDragHandlers = { move: e => { if (dragging) onMove(e.clientX); }, end: onEnd };
-  vp.addEventListener('mousedown', e => onStart(e.clientX));
+  vp.addEventListener('mousedown', e => onStart(e.clientX, e.target));
   window.addEventListener('mousemove', scDragHandlers.move);
   window.addEventListener('mouseup', scDragHandlers.end);
-  vp.addEventListener('touchstart', e => onStart(e.touches[0].clientX), { passive: true });
+  vp.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.target), { passive: true });
   vp.addEventListener('touchmove', e => { e.preventDefault(); onMove(e.touches[0].clientX); }, { passive: false });
   vp.addEventListener('touchend', onEnd);
 }
@@ -1917,35 +2003,9 @@ function initScrubAfterRender() {
   requestAnimationFrame(() => { scInitPos(); initScrubDrag(); initScrubTooltip(); });
 }
 
-window.scPrev = function() {
-  scPageStart = new Date(scPageStart);
-  scPageStart.setDate(scPageStart.getDate() - PAGE_DAYS);
-  const track = document.getElementById('sc-track');
-  if (track) track.innerHTML = buildScrubTrackHTML();
-  const vp = document.getElementById('sc-vp');
-  const W = vp ? vp.getBoundingClientRect().width : 800;
-  scTX = W / 2 - Math.floor(PAGE_DAYS / 2) * PX_DAY;
-  scApply(); scUpdateDate();
-};
-
-window.scNext = function() {
-  scPageStart = new Date(scPageStart);
-  scPageStart.setDate(scPageStart.getDate() + PAGE_DAYS);
-  const track = document.getElementById('sc-track');
-  if (track) track.innerHTML = buildScrubTrackHTML();
-  const vp = document.getElementById('sc-vp');
-  const W = vp ? vp.getBoundingClientRect().width : 800;
-  scTX = W / 2 - Math.floor(PAGE_DAYS / 2) * PX_DAY;
-  scApply(); scUpdateDate();
-};
-
-window.scReset = function() {
-  scPageStart = new Date(TODAY);
-  scPageStart.setDate(scPageStart.getDate() - 42);
-  const track = document.getElementById('sc-track');
-  if (track) track.innerHTML = buildScrubTrackHTML();
-  scInitPos();
-};
+window.scPrev = function() { scTX = scClamp(scTX + SC_JUMP * PX_DAY); scApply(); scUpdateDate(); };
+window.scNext = function() { scTX = scClamp(scTX - SC_JUMP * PX_DAY); scApply(); scUpdateDate(); };
+window.scReset = function() { scCenterOn(TODAY); };
 
 // ── 데이터 fetch ──────────────────────────────────────
 async function fetchData() {
