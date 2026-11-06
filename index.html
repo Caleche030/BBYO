@@ -309,7 +309,19 @@
   .rk-val { font-size:15px; font-weight:800; color:var(--text); white-space:nowrap; }
   .rk-empty, .rk-more { font-size:11px; color:var(--text3); padding:4px; }
   .rk-note { font-size:11px; color:var(--text3); margin-top:8px; }
-  @media (max-width: 600px) {
+  .rk-next { font-style:normal; color:var(--ga); font-weight:600; }
+  .aw-row { display:flex; flex-wrap:wrap; gap:8px; padding:12px 18px 0; }
+  .aw-plaque { --aw:var(--ga); --awb:var(--gb); display:flex; align-items:center; gap:10px; padding:8px 14px 8px 8px;
+    border:1px solid var(--aw); border-radius:10px; background:var(--awb); min-width:0; }
+  .aw-gold   { --aw:#C9971C; --awb:#FFF6DC; }
+  .aw-silver { --aw:#8C96A3; --awb:#F1F3F6; }
+  .aw-bronze { --aw:#B0703A; --awb:#FBEDE2; }
+  .aw-ic { width:30px; height:30px; flex-shrink:0; border-radius:50%; background:var(--aw); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; }
+  .aw-body { display:flex; flex-direction:column; min-width:0; line-height:1.25; }
+  .aw-t { font-size:11px; font-weight:600; color:var(--aw); }
+  .aw-v { font-size:17px; font-weight:800; color:var(--text); }
+  .aw-d { font-size:11px; color:var(--text2); }  @media (max-width: 600px) {
     .rk-wrap { grid-template-columns:1fr; }
     .rr-main { gap:12px; padding:14px; }
     .rr-left .pt-box { width:84px !important; height:84px !important; }
@@ -886,11 +898,30 @@ function renderPool(res, gameName) {
 }
 
 const RK_N = 10;   // 복각 순위 표시 인원
-// 복각 순위: 5성 픽업 캐릭터 중 (상시·픽뚫 목록·상점·무료 제외) 가장 오래 미복각 / 가장 많이 복각
+const AW_TROPHY = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3zm0 4H6v1a2 2 0 0 0 1 1.7V7zm11 0v2.7A2 2 0 0 0 18 8V7h-1z"/></svg>';
+const curVerIdx = gameData => gameData.reduce((m, v, i) => (pd(v.s) && pd(v.s) <= TODAY ? i : m), -1);
+
+// 최장 공백 기록: 픽업 사이 버전 수 중 최대. 지금 기다리는 중인 공백도 포함(to = null)
+function gapRecord(hist, curIdx) {
+  const done = hist.filter(h => h.st !== 'future');
+  const pts = [...new Map(done.map(h => [h.idx, h])).values()];
+  let rec = null;
+  pts.slice(1).forEach((h, i) => {
+    const g = h.idx - pts[i].idx;
+    if (!rec || g >= rec.gap) rec = { gap: g, from: pts[i], to: h };
+  });
+  const last = pts[pts.length - 1];
+  if (last && !done.some(h => h.st === 'now') && curIdx - last.idx > 0 && (!rec || curIdx - last.idx >= rec.gap))
+    rec = { gap: curIdx - last.idx, from: last, to: null };
+  return rec;
+}
+
+// 복각 순위: 5성 픽업 캐릭터 중 (상시·픽뚫 목록·상점·무료 제외) 가장 오래 미복각 / 가장 많이 복각 / 역대 최장 공백
+// 복각 예정이 잡혔어도 아직 시작 전이면 기다리는 중으로 본다(next 표시)
 function rerunRanks(gameData, gameName) {
   const spec = SPECIAL_CHARS[gameName] || {};
   const skip = new Set([...POOL_KINDS, 'free'].flatMap(k => spec[k] || []));
-  const curIdx = gameData.reduce((m, v, i) => (pd(v.s) && pd(v.s) <= TODAY ? i : m), -1);
+  const curIdx = curVerIdx(gameData);
   const rows = Object.keys(allChars(gameData)).filter(k => {
     if (skip.has(k) || k.includes('(4성)')) return false;
     const p = portraitInfo(gameName, k);
@@ -898,21 +929,22 @@ function rerunRanks(gameData, gameName) {
   }).map(k => {
     const hist = rerunHistory(gameData, k);
     const past = hist.filter(h => h.st === 'past'), last = past[past.length - 1];
-    const now = hist.some(h => h.st === 'now'), next = hist.some(h => h.st === 'future');
-    return { name: k, last, now, next,
+    const now = hist.some(h => h.st === 'now'), next = hist.find(h => h.st === 'future');
+    return { name: k, last, now, next, rec: gapRecord(hist, curIdx),
       reruns: hist.filter(h => h.st !== 'future' && h.type === '복각').length,
       wait: last ? curIdx - last.idx : 0 };
   }).filter(r => r.last || r.now);
-  // 동률은 같은 순위. RK_N명까지 보여주고 RK_N위 안 동률이 더 있으면 more
+  // 동률은 같은 순위. RK_N명까지 보여주고 RK_N위 안 동률이 더 있으면 more. all = 전체 순위(어워즈용)
   const top = (arr, val) => {
     const ranked = [];
     arr.forEach((r, i) => ranked.push({ ...r, rank: i && val(r) === val(arr[i - 1]) ? ranked[i - 1].rank : i + 1 }));
-    return { list: ranked.slice(0, RK_N), more: ranked.filter(r => r.rank <= RK_N).length - Math.min(RK_N, ranked.length) };
+    return { all: ranked, list: ranked.slice(0, RK_N), more: ranked.filter(r => r.rank <= RK_N).length - Math.min(RK_N, ranked.length) };
   };
-  const waiting = rows.filter(r => !r.now && !r.next && r.wait > 0)
+  const waiting = rows.filter(r => !r.now && r.wait > 0)
     .sort((a, b) => b.wait - a.wait || a.last.idx - b.last.idx);
   const most = [...rows].sort((a, b) => b.reruns - a.reruns || (b.last?.idx ?? 0) - (a.last?.idx ?? 0));
-  return { waiting: top(waiting, r => r.wait), most: top(most, r => r.reruns) };
+  const record = rows.filter(r => r.rec).sort((a, b) => b.rec.gap - a.rec.gap);
+  return { waiting: top(waiting, r => r.wait), most: top(most, r => r.reruns), record: top(record, r => r.rec.gap) };
 }
 
 function renderRerunRanks(gameName) {
@@ -926,10 +958,11 @@ function renderRerunRanks(gameName) {
       ${t.list.length ? t.list.map(fn).join('') : '<p class="rk-empty">해당 없음</p>'}
       ${t.more > 0 ? `<p class="rk-more">외 ${t.more}명 동률</p>` : ''}</div>`;
   return `<div class="rk-wrap">
-    ${col('가장 오래 복각 안 한 캐릭터', waiting, r => row(r, `${r.wait}버전째`, `마지막 ${r.last.v} ${r.last.half}`))}
+    ${col('가장 오래 복각 안 한 캐릭터', waiting, r => row(r, `${r.wait}버전째`,
+      `마지막 ${r.last.v} ${r.last.half}${r.next ? ` · <em class="rk-next">${r.next.v} ${r.next.half} ${r.next.type}${r.next.guess ? ' 예상' : ' 예정'}</em>` : ''}`))}
     ${col('가장 많이 복각한 캐릭터', most, r => row(r, `${r.reruns}회`, r.now ? '지금 픽업 중' : `마지막 ${r.last.v} ${r.last.half}`))}
   </div>
-  <p class="rk-note">5성 픽업 캐릭터 기준 · 상시·픽뚫 목록·상점 캐릭터 제외 · 복각 예정이 잡힌 캐릭터는 '오래 복각 안 한' 순위에서 제외</p>`;
+  <p class="rk-note">5성 픽업 캐릭터 기준 · 상시·픽뚫 목록·상점 캐릭터 제외 · 복각 예정이 잡혀도 시작 전까지는 기다리는 중으로 셈</p>`;
 }
 
 function renderResult(res, gameName) {
@@ -952,6 +985,7 @@ function renderResult(res, gameName) {
     const kind = res.next.type === '신규' ? '첫 픽업' : '복각';
     status = res.next.guess ? `${res.next.v}버전 ${kind} 예상` : `${res.next.v}버전 ${kind} 확정`;
     sub.push(`${vh(res.next)} · ${dday(res.next.hs)} (${fmt(res.next.hs)} 시작)${res.next.guess ? ' · 시트에 추측(?)으로 표시됨' : ''}`);
+    if (res.last && res.waitVers > 0) sub.push(`지금은 <b>${res.waitVers}버전째</b> 기다리는 중 · 마지막 픽업 ${vh(res.last)} ${res.last.type}`);
   } else if (res.last) {
     status = `${res.waitVers}버전째 미복각`;
     sub.push(`마지막 픽업 ${vh(res.last)} ${res.last.type} · ${res.daysSince}일 전`);
@@ -972,6 +1006,24 @@ function renderResult(res, gameName) {
   const tail = !res.now && !res.next && res.last
     ? `<span class="rr-gap">${res.waitVers}버전</span><span class="rr-chip rr-wait">지금 · 대기 중</span>` : '';
 
+  // 어워즈: 최장 공백 기록(역대 순위) + 현재 순위표 입상
+  const rk = rerunRanks(GAMES[gameName], gameName);
+  const rankOf = t => t.all.find(r => r.name === res.name)?.rank;
+  const rec = gapRecord(res.hist, curVerIdx(GAMES[gameName]));
+  const medal = n => n === 1 ? ' aw-gold' : n === 2 ? ' aw-silver' : n === 3 ? ' aw-bronze' : '';
+  const award = (n, title, val, desc) => `<div class="aw-plaque${medal(n)}">
+      <span class="aw-ic">${n && n <= 3 ? n : AW_TROPHY}</span>
+      <span class="aw-body"><span class="aw-t">${title}</span><b class="aw-v">${val}</b>${desc ? `<span class="aw-d">${desc}</span>` : ''}</span></div>`;
+  const awards = [];
+  if (rec) {
+    const n = rankOf(rk.record);
+    awards.push(award(n, `최장 공백 기록${n && n <= RK_N ? ` · ${gameName} 역대 ${n}위` : ''}`, `${rec.gap}버전`,
+      `${vh(rec.from)} → ${rec.to ? vh(rec.to) : res.next ? `지금 (${vh(res.next)} ${res.next.type} ${res.next.guess ? '예상' : '예정'})` : '지금 (진행 중)'}`));
+  }
+  const wN = rankOf(rk.waiting), mN = rankOf(rk.most);
+  if (wN && wN <= RK_N) awards.push(award(wN, '오래 복각 안 한 캐릭터', `${wN}위`, `${res.waitVers}버전째 대기`));
+  if (mN && mN <= RK_N && res.rerunCount) awards.push(award(mN, '많이 복각한 캐릭터', `${mN}위`, `복각 ${res.rerunCount}회`));
+
   const p = portraitInfo(gameName, res.name);
   const facts = [
     `복각 <b>${res.rerunCount}</b>회`,
@@ -989,6 +1041,7 @@ function renderResult(res, gameName) {
         <div class="rr-facts">${facts}</div>
       </div>
     </div>
+    ${awards.length ? `<div class="aw-row">${awards.join('')}</div>` : ''}
     <div class="rr-hist"><p class="rr-hist-t">픽업 이력</p><div class="rr-chips">${chips}${tail}</div></div>
   </div>`;
 }
