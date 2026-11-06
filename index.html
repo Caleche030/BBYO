@@ -309,6 +309,7 @@
   .rk-val { font-size:15px; font-weight:800; color:var(--text); white-space:nowrap; }
   .rk-empty, .rk-more { font-size:11px; color:var(--text3); padding:4px; }
   .rk-note { font-size:11px; color:var(--text3); margin-top:8px; }
+  .rk-val small { display:block; font-size:10px; font-weight:500; color:var(--text3); text-align:right; }
   .rk-next { font-style:normal; color:var(--ga); font-weight:600; }
   .aw-row { display:flex; flex-wrap:wrap; gap:8px; padding:12px 18px 0; }
   .aw-plaque { --aw:var(--ga); --awb:var(--gb); display:flex; align-items:center; gap:10px; padding:8px 14px 8px 8px;
@@ -901,18 +902,23 @@ const RK_N = 10;   // 복각 순위 표시 인원
 const AW_TROPHY = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3zm0 4H6v1a2 2 0 0 0 1 1.7V7zm11 0v2.7A2 2 0 0 0 18 8V7h-1z"/></svg>';
 const curVerIdx = gameData => gameData.reduce((m, v, i) => (pd(v.s) && pd(v.s) <= TODAY ? i : m), -1);
 
-// 최장 공백 기록: 픽업 사이 버전 수 중 최대. 지금 기다리는 중인 공백도 포함(to = null)
+const daysGap = (a, b) => Math.max(0, Math.floor((b - a) / 86400000));
+
+// 최장 공백 기록: 픽업 종료 → 다음 픽업 시작 사이 일수가 가장 긴 구간. 지금 기다리는 중인 공백도 포함(to = null)
+// gap = 버전 수(보조), days = 일수(기준)
 function gapRecord(hist, curIdx) {
   const done = hist.filter(h => h.st !== 'future');
-  const pts = [...new Map(done.map(h => [h.idx, h])).values()];
+  const byIdx = new Map();   // 버전별 첫 등장(to 용) / 마지막 등장(from 용)
+  done.forEach(h => { const e = byIdx.get(h.idx); byIdx.set(h.idx, e ? { first: e.first, last: h } : { first: h, last: h }); });
+  const pts = [...byIdx.values()];
   let rec = null;
-  pts.slice(1).forEach((h, i) => {
-    const g = h.idx - pts[i].idx;
-    if (!rec || g >= rec.gap) rec = { gap: g, from: pts[i], to: h };
-  });
+  const put = (from, to, gap) => {
+    const days = daysGap(from.he, to ? to.hs : TODAY);
+    if (!rec || days >= rec.days) rec = { gap, days, from, to };
+  };
+  pts.slice(1).forEach((p, i) => put(pts[i].last, p.first, p.first.idx - pts[i].last.idx));
   const last = pts[pts.length - 1];
-  if (last && !done.some(h => h.st === 'now') && curIdx - last.idx > 0 && (!rec || curIdx - last.idx >= rec.gap))
-    rec = { gap: curIdx - last.idx, from: last, to: null };
+  if (last && !done.some(h => h.st === 'now') && TODAY > last.last.he) put(last.last, null, curIdx - last.last.idx);
   return rec;
 }
 
@@ -932,7 +938,7 @@ function rerunRanks(gameData, gameName) {
     const now = hist.some(h => h.st === 'now'), next = hist.find(h => h.st === 'future');
     return { name: k, last, now, next, rec: gapRecord(hist, curIdx),
       reruns: hist.filter(h => h.st !== 'future' && h.type === '복각').length,
-      wait: last ? curIdx - last.idx : 0 };
+      wait: last ? curIdx - last.idx : 0, waitDays: last ? daysGap(last.he, TODAY) : 0 };
   }).filter(r => r.last || r.now);
   // 동률은 같은 순위. RK_N명까지 보여주고 RK_N위 안 동률이 더 있으면 more. all = 전체 순위(어워즈용)
   const top = (arr, val) => {
@@ -940,11 +946,10 @@ function rerunRanks(gameData, gameName) {
     arr.forEach((r, i) => ranked.push({ ...r, rank: i && val(r) === val(arr[i - 1]) ? ranked[i - 1].rank : i + 1 }));
     return { all: ranked, list: ranked.slice(0, RK_N), more: ranked.filter(r => r.rank <= RK_N).length - Math.min(RK_N, ranked.length) };
   };
-  const waiting = rows.filter(r => !r.now && r.wait > 0)
-    .sort((a, b) => b.wait - a.wait || a.last.idx - b.last.idx);
+  const waiting = rows.filter(r => !r.now && r.waitDays > 0).sort((a, b) => b.waitDays - a.waitDays);
   const most = [...rows].sort((a, b) => b.reruns - a.reruns || (b.last?.idx ?? 0) - (a.last?.idx ?? 0));
-  const record = rows.filter(r => r.rec).sort((a, b) => b.rec.gap - a.rec.gap);
-  return { waiting: top(waiting, r => r.wait), most: top(most, r => r.reruns), record: top(record, r => r.rec.gap) };
+  const record = rows.filter(r => r.rec).sort((a, b) => b.rec.days - a.rec.days);
+  return { waiting: top(waiting, r => r.waitDays), most: top(most, r => r.reruns), record: top(record, r => r.rec.days) };
 }
 
 function renderRerunRanks(gameName) {
@@ -958,7 +963,7 @@ function renderRerunRanks(gameName) {
       ${t.list.length ? t.list.map(fn).join('') : '<p class="rk-empty">해당 없음</p>'}
       ${t.more > 0 ? `<p class="rk-more">외 ${t.more}명 동률</p>` : ''}</div>`;
   return `<div class="rk-wrap">
-    ${col('가장 오래 복각 안 한 캐릭터', waiting, r => row(r, `${r.wait}버전째`,
+    ${col('가장 오래 복각 안 한 캐릭터', waiting, r => row(r, `${r.waitDays.toLocaleString()}일<small>${r.wait}버전째</small>`,
       `마지막 ${r.last.v} ${r.last.half}${r.next ? ` · <em class="rk-next">${r.next.v} ${r.next.half} ${r.next.type}${r.next.guess ? ' 예상' : ' 예정'}</em>` : ''}`))}
     ${col('가장 많이 복각한 캐릭터', most, r => row(r, `${r.reruns}회`, r.now ? '지금 픽업 중' : `마지막 ${r.last.v} ${r.last.half}`))}
   </div>
@@ -985,10 +990,10 @@ function renderResult(res, gameName) {
     const kind = res.next.type === '신규' ? '첫 픽업' : '복각';
     status = res.next.guess ? `${res.next.v}버전 ${kind} 예상` : `${res.next.v}버전 ${kind} 확정`;
     sub.push(`${vh(res.next)} · ${dday(res.next.hs)} (${fmt(res.next.hs)} 시작)${res.next.guess ? ' · 시트에 추측(?)으로 표시됨' : ''}`);
-    if (res.last && res.waitVers > 0) sub.push(`지금은 <b>${res.waitVers}버전째</b> 기다리는 중 · 마지막 픽업 ${vh(res.last)} ${res.last.type}`);
+    if (res.last && res.daysSince > 0) sub.push(`지금은 <b>${res.daysSince.toLocaleString()}일째</b>(${res.waitVers}버전째) 기다리는 중 · 마지막 픽업 ${vh(res.last)} ${res.last.type}`);
   } else if (res.last) {
-    status = `${res.waitVers}버전째 미복각`;
-    sub.push(`마지막 픽업 ${vh(res.last)} ${res.last.type} · ${res.daysSince}일 전`);
+    status = `${res.daysSince.toLocaleString()}일째 미복각`;
+    sub.push(`<b>${res.waitVers}버전째</b> · 마지막 픽업 ${vh(res.last)} ${res.last.type} (${fmt(res.last.he)} 종료)`);
     if (res.estimate) sub.push(`빠르면 <b>${res.estimate.ver}버전</b>부터 복각 가능 (추정)`);
   } else {
     status = '등장 기록 없음';
@@ -1017,11 +1022,11 @@ function renderResult(res, gameName) {
   const awards = [];
   if (rec) {
     const n = rankOf(rk.record);
-    awards.push(award(n, `최장 공백 기록${n && n <= RK_N ? ` · ${gameName} 역대 ${n}위` : ''}`, `${rec.gap}버전`,
-      `${vh(rec.from)} → ${rec.to ? vh(rec.to) : res.next ? `지금 (${vh(res.next)} ${res.next.type} ${res.next.guess ? '예상' : '예정'})` : '지금 (진행 중)'}`));
+    awards.push(award(n, `최장 공백 기록${n && n <= RK_N ? ` · ${gameName} 역대 ${n}위` : ''}`, `${rec.days.toLocaleString()}일`,
+      `${rec.gap}버전 · ${vh(rec.from)} → ${rec.to ? vh(rec.to) : res.next ? `지금 (${vh(res.next)} ${res.next.type} ${res.next.guess ? '예상' : '예정'})` : '지금 (진행 중)'}`));
   }
   const wN = rankOf(rk.waiting), mN = rankOf(rk.most);
-  if (wN && wN <= RK_N) awards.push(award(wN, '오래 복각 안 한 캐릭터', `${wN}위`, `${res.waitVers}버전째 대기`));
+  if (wN && wN <= RK_N) awards.push(award(wN, '오래 복각 안 한 캐릭터', `${wN}위`, `${res.daysSince.toLocaleString()}일째 (${res.waitVers}버전째) 대기`));
   if (mN && mN <= RK_N && res.rerunCount) awards.push(award(mN, '많이 복각한 캐릭터', `${mN}위`, `복각 ${res.rerunCount}회`));
 
   const p = portraitInfo(gameName, res.name);
