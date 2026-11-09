@@ -1600,8 +1600,7 @@ function gcInitForm() {
       <div><p class="gc-lbl">현재 스택</p><input class="gc-inp" type="number" id="gc-pity" min="0" placeholder="0" style="width:90px;" oninput="gcDoCalc()"><p class="gc-hint" id="gc-pity-hint"></p></div>
       <div><p class="gc-lbl">${g.currency}</p><input class="gc-inp" type="number" id="gc-gems" min="0" placeholder="0" style="width:110px;" oninput="gcDoCalc()"></div>
       <div><p class="gc-lbl" id="gc-fate-lbl">${g.fateName}</p><input class="gc-inp" type="number" id="gc-fates" min="0" placeholder="0" style="width:100px;" oninput="gcDoCalc()"></div>
-    </div>
-    <p class="gc-hint" style="margin-top:6px;">입력값은 이 브라우저에 자동 저장돼요.</p>`;
+    </div>`;
   const sv = (gcStore().data || {})[gcGame];
   if (sv && sv.bt === '무기') gcSetSeg(document.querySelectorAll('#gc-bt button')[1], 'gc-bt');
   gcUpBanner();
