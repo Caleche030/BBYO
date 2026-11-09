@@ -1500,7 +1500,13 @@ const GC_ST = [  // 보유 재화로 "지금 들어가면" 성공할 확률 기�
 function josa(w, a, b) { const c = w.charCodeAt(w.length - 1) - 0xAC00; return w + (c >= 0 && c <= 11171 && c % 28 ? a : b); }
 // 기록 메뉴 이름 (스택 확인 안내용)
 const GC_LOG = { genshin:'기원 기록', starrail:'워프 기록', wuwa:'뽑기 기록' };
-let gcGame = 'genshin';
+
+// 입력값 자동 저장 (이 브라우저 localStorage). 게임별: 마지막 배너(bt)·보유 재화(gems), 배너별: 목표·천장 상태·스택·티켓
+// { game, data: { genshin: { bt, gems, 캐릭터: {cop, gur, pity, fates}, 무기: {...} } } }
+const GC_KEY = 'bbyo-gacha-v1';
+function gcStore() { try { return JSON.parse(localStorage.getItem(GC_KEY)) || {}; } catch (e) { return {}; } }
+function gcPut(st) { try { localStorage.setItem(GC_KEY, JSON.stringify(st)); } catch (e) {} }
+let gcGame = (g => GC_CFG[g] ? g : 'genshin')(gcStore().game);
 
 // 목표 n개를 얻기까지 총 뽑기 수 분포 P(T=t) (정확 DP)
 // 상태: 현재 스택, 확정 여부, 포착의 빛 연속 실패 카운터(원신 캐릭터), 획득 수
@@ -1567,7 +1573,7 @@ function renderGachaCalc() {
     return toolGameBtn(id === gcGame, gc.a || '#999', g.icon, g.name, `gcSelGame('${id}')`, `id="gc-gb-${id}"`);
   }).join('');
   return `<div class="tool-panel">
-      <div class="tool-games">${btns}<button class="sc-btn gc-reset" onclick="gcInitForm()" title="입력값 초기화">↺ 초기화</button></div>
+      <div class="tool-games">${btns}<button class="sc-btn gc-reset" onclick="gcReset()" title="이 게임의 입력값과 저장된 값을 지움">↺ 초기화</button></div>
       <div id="gc-form"></div>
     </div>
     <div id="gc-res" style="margin-top:12px;"></div>`;
@@ -1594,12 +1600,23 @@ function gcInitForm() {
       <div><p class="gc-lbl">현재 스택</p><input class="gc-inp" type="number" id="gc-pity" min="0" placeholder="0" style="width:90px;" oninput="gcDoCalc()"><p class="gc-hint" id="gc-pity-hint"></p></div>
       <div><p class="gc-lbl">${g.currency}</p><input class="gc-inp" type="number" id="gc-gems" min="0" placeholder="0" style="width:110px;" oninput="gcDoCalc()"></div>
       <div><p class="gc-lbl" id="gc-fate-lbl">${g.fateName}</p><input class="gc-inp" type="number" id="gc-fates" min="0" placeholder="0" style="width:100px;" oninput="gcDoCalc()"></div>
-    </div>`;
+    </div>
+    <p class="gc-hint" style="margin-top:6px;">입력값은 이 브라우저에 자동 저장돼요.</p>`;
+  const sv = (gcStore().data || {})[gcGame];
+  if (sv && sv.bt === '무기') gcSetSeg(document.querySelectorAll('#gc-bt button')[1], 'gc-bt');
   gcUpBanner();
 }
 
+window.gcReset = function() {
+  const st = gcStore();
+  if (st.data) delete st.data[gcGame];
+  gcPut(st);
+  gcInitForm();
+};
+
 window.gcSelGame = function(id) {
   gcGame = id;
+  const st = gcStore(); st.game = id; gcPut(st);
   refreshTools();
 };
 
@@ -1621,8 +1638,29 @@ window.gcUpBanner = function() {
   const opts = useFP ? ['운명 포인트 0', '운명 포인트 1'] : ['반천장', '확천장'];
   document.getElementById('gc-gur').innerHTML = opts
     .map((l, i) => `<button${i === 0 ? ' class="on"' : ''} onclick="gcSetSeg(this,'gc-gur');gcDoCalc()">${l}</button>`).join('');
+  // 저장값 복원 (없으면 빈칸·첫 버튼)
+  const sv = (gcStore().data || {})[gcGame] || {}, b = sv[isW ? '무기' : '캐릭터'] || {};
+  const pick = (id, txt) => { const btn = [...document.querySelectorAll('#' + id + ' button')].find(x => x.textContent.trim() === txt); if (btn) gcSetSeg(btn, id); };
+  if (b.cop) pick('gc-cop', b.cop);
+  if (b.gur) pick('gc-gur', b.gur);
+  document.getElementById('gc-pity').value = b.pity ?? '';
+  document.getElementById('gc-fates').value = b.fates ?? '';
+  document.getElementById('gc-gems').value = sv.gems ?? '';
   gcDoCalc();
 };
+
+// 현재 폼 값을 저장 (gcDoCalc 마다 호출)
+function gcSave() {
+  const v = id => document.getElementById(id)?.value ?? '';
+  const bt = gcGetSeg('gc-bt') || '캐릭터';
+  const st = gcStore();
+  st.game = gcGame;
+  st.data = st.data || {};
+  const d = st.data[gcGame] = st.data[gcGame] || {};
+  d.bt = bt; d.gems = v('gc-gems');
+  d[bt] = { cop: gcGetSeg('gc-cop'), gur: gcGetSeg('gc-gur'), pity: v('gc-pity'), fates: v('gc-fates') };
+  gcPut(st);
+}
 
 // 현재 스택에서 다음 5성까지 k뽑 안에 나올 누적 확률
 function gcFirst5Cdf(cfg, pity, kMax) {
@@ -1649,6 +1687,7 @@ window.gcDoCalc = function() {
   let pity = parseInt(pityEl.value) || 0;
   if (pity > cfg.hard - 1 || pity < 0) { pity = Math.max(0, Math.min(pity, cfg.hard - 1)); pityEl.value = pity; }
   if (pityHint) pityHint.textContent = `0~${cfg.hard - 1} (${cfg.hard}뽑째 확정)`;
+  gcSave();
 
   const gemsRaw = document.getElementById('gc-gems').value, fatesRaw = document.getElementById('gc-fates').value;
   if (!(parseInt(gemsRaw) > 0) && !(parseInt(fatesRaw) > 0)) {
